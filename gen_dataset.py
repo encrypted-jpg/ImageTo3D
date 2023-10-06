@@ -23,7 +23,7 @@ rotation_sets = [
 ]
 
 data_path = "../ShapeNet/"
-base_dir = "./ShapeNetRender"
+base_dir = os.path.join(os.getcwd(), "ShapeNetRender/")
 
 
 def generate_data(files_info):

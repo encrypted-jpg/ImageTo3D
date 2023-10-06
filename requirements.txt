@@ -1,0 +1,6 @@
+open3d-python
+h5py
+cv2
+open3d
+tensorboardx
+visdom

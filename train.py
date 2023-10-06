@@ -103,7 +103,7 @@ def get_model():
 def train(models, trainLoader, valLoader, args):
     print("[+] Training the model...")
     ckpt_dir, epochs_dir, log_fd, train_writer, val_writer, exp_path = prepare_logger(
-        ".", args.exp)
+        args.log_dir, args.exp)
     bestSavePath = os.path.join(ckpt_dir, "bestModel.pth")
     lastSavePath = os.path.join(ckpt_dir, "lastModel.pth")
     print_log(log_fd, str(args))
@@ -410,6 +410,7 @@ def get_args():
                         help="Folder containing the data")
     parser.add_argument("--json", type=str, default="final.json",
                         help="JSON file containing the data")
+    parser.add_argument("--log_dir", type=str, default=".", help="Log dir")
     parser.add_argument("--exp", type=str, default="exp", help="Experiment")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
     parser.add_argument("--size", type=int, default=224, help="Image size")

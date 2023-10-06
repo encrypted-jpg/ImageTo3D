@@ -10,6 +10,7 @@ parser.add_argument('--train', type=float, default=0.8)
 parser.add_argument('--test', type=float, default=0.1)
 parser.add_argument('--val', type=float, default=0.1)
 parser.add_argument('--dir', type=str, default='.')
+parser.add_argument('--output', type=str, default='final.json')
 
 
 def get_args():
@@ -69,10 +70,10 @@ def get_split(filelist, top, total_count, train_ratio, test_ratio, val_ratio):
     return final
 
 
-def save_jsons(final, dir):
+def save_jsons(final, dir, output):
     os.makedirs(dir, exist_ok=True)
-    print(f"Saving to {dir}")
-    with open(os.path.join(dir, "final.json"), 'w') as f:
+    print(f"Saving to {dir}/{output}")
+    with open(os.path.join(dir, output), 'w') as f:
         json.dump(final, f)
 
     # with open(os.path.join(dir, "train.json"), 'w') as f:
@@ -90,4 +91,4 @@ if __name__ == "__main__":
             "Train, test, and val ratios must be between 0 and 1 and must add up to 1")
     final = get_split(
         args.filelist, args.top, args.count, args.train, args.test, args.val)
-    save_jsons(final, args.dir)
+    save_jsons(final, args.dir, args.output)
