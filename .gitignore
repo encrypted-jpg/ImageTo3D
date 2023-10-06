@@ -1,0 +1,13 @@
+ShapeNetRender/*
+__pycache__/*
+.vscode/*
+output/*
+exp/*
+*.ipynb
+*.zip
+*.png
+*.pcd
+*.obj
+*.npy
+temp.py
+stdout.txt
