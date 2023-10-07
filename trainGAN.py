@@ -104,6 +104,20 @@ def get_model():
     return netG_A2B, netD_B
 
 
+def get_scheduler(optimizer_G, optimizer_D_B, args):
+    if args.scheduler == 'step':
+        lr_scheduler_G = torch.optim.lr_scheduler.StepLR(
+            optimizer_G, step_size=1, gamma=args.gamma)
+        lr_scheduler_D_B = torch.optim.lr_scheduler.StepLR(
+            optimizer_D_B, step_size=1, gamma=args.gamma)
+    else:
+        lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(
+            optimizer_G, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
+        lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(
+            optimizer_D_B, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
+    return lr_scheduler_G, lr_scheduler_D_B
+
+
 def train(models, trainLoader, valLoader, args):
     print("[+] Training the model...")
     ckpt_dir, epochs_dir, log_fd, train_writer, val_writer, exp_path = prepare_logger(
@@ -132,12 +146,8 @@ def train(models, trainLoader, valLoader, args):
     optimizer_D_B = torch.optim.Adam(
         netD_B.parameters(), lr=args.lr, betas=(0.5, 0.999))
 
-    lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(
-        optimizer_G, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
-    # lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(
-    #     optimizer_D_A, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
-    lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(
-        optimizer_D_B, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
+    lr_scheduler_G, lr_scheduler_D_B = get_scheduler(
+        optimizer_G, optimizer_D_B, args)
 
     train_step = 0
     minLoss = 1e10
@@ -185,7 +195,7 @@ def train(models, trainLoader, valLoader, args):
         train_loss = 0.0
         loader = tqdm(trainLoader)
         for i, batch in enumerate(loader):
-            loader.set_description(f"Loss: {train_loss:.4f}")
+            loader.set_description(f"Loss: {(train_loss/(i+1)):.4f}")
             # Set model input
             taxonomy_id, model_id, (A, B) = batch
             real_A = Variable(input_A.copy_(A)).to(device)
@@ -310,7 +320,9 @@ def train(models, trainLoader, valLoader, args):
         netD_B.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for i, batch in enumerate(tqdm(valLoader)):
+            loader = tqdm(valLoader)
+            for i, batch in enumerate(loader):
+                loader.set_description(f"Loss: {(val_loss/(i+1)):.4f}")
                 # Set model input
                 taxonomy_id, model_id, (A, B) = batch
                 real_A = Variable(input_A.copy_(A))
@@ -396,11 +408,14 @@ def get_args():
                         help="Folder containing the data")
     parser.add_argument("--json", type=str, default="final.json",
                         help="JSON file containing the data")
-    parser.add_argument("--log_dir", type=str, default=".", help="Log dir")
+    parser.add_argument("--log_dir", type=str, default="logs", help="Log dir")
     parser.add_argument("--exp", type=str, default="exp", help="Experiment")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
     parser.add_argument("--size", type=int, default=224, help="Image size")
     parser.add_argument("--epoch", type=int, default=0, help="Epoch to start")
+    parser.add_argument("--scheduler", type=str,
+                        default="step", help="Scheduler")
+    parser.add_argument("--gamma", type=float, default=0.85, help="Gamma")
     parser.add_argument("--n_epochs", type=int, default=200,
                         help="Number of epochs")
     parser.add_argument("--decay_epoch", type=int, default=100,
