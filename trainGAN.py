@@ -94,14 +94,14 @@ def get_model():
     input_nc = 3
     output_nc = 3
     netG_A2B = Generator(input_nc, output_nc)
-    netG_B2A = Generator(output_nc, input_nc)
-    netD_A = Discriminator(input_nc)
+    # netG_B2A = Generator(output_nc, input_nc)
+    # netD_A = Discriminator(input_nc)
     netD_B = Discriminator(output_nc)
     print(f"Generator A2B: {count_parameters(netG_A2B)}")
-    print(f"Generator B2A: {count_parameters(netG_B2A)}")
-    print(f"Discriminator A: {count_parameters(netD_A)}")
+    # print(f"Generator B2A: {count_parameters(netG_B2A)}")
+    # print(f"Discriminator A: {count_parameters(netD_A)}")
     print(f"Discriminator B: {count_parameters(netD_B)}")
-    return netG_A2B, netG_B2A, netD_A, netD_B
+    return netG_A2B, netD_B
 
 
 def train(models, trainLoader, valLoader, args):
@@ -114,10 +114,8 @@ def train(models, trainLoader, valLoader, args):
     device = torch.device(
         f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 
-    netG_A2B, netG_B2A, netD_A, netD_B = models
+    netG_A2B, netD_B = models
     netG_A2B = netG_A2B.to(device)
-    netG_B2A = netG_B2A.to(device)
-    netD_A = netD_A.to(device)
     netD_B = netD_B.to(device)
 
     # Lossess
@@ -127,17 +125,17 @@ def train(models, trainLoader, valLoader, args):
     criterion_identity = torch.nn.L1Loss()
 
     # Optimizers & LR schedulers
-    optimizer_G = torch.optim.Adam(itertools.chain(netG_A2B.parameters(), netG_B2A.parameters()),
+    optimizer_G = torch.optim.Adam(netG_A2B.parameters(),
                                    lr=args.lr, betas=(0.5, 0.999))
-    optimizer_D_A = torch.optim.Adam(
-        netD_A.parameters(), lr=args.lr, betas=(0.5, 0.999))
+    # optimizer_D_A = torch.optim.Adam(
+    #     netD_A.parameters(), lr=args.lr, betas=(0.5, 0.999))
     optimizer_D_B = torch.optim.Adam(
         netD_B.parameters(), lr=args.lr, betas=(0.5, 0.999))
 
     lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(
         optimizer_G, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
-    lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(
-        optimizer_D_A, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
+    # lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(
+    #     optimizer_D_A, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
     lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(
         optimizer_D_B, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
 
@@ -149,14 +147,10 @@ def train(models, trainLoader, valLoader, args):
         print_log(log_fd, f"Loading checkpoint from {args.modelPath}")
         checkpoint = torch.load(args.modelPath)
         netG_A2B.load_state_dict(checkpoint['netG_A2B'])
-        netG_B2A.load_state_dict(checkpoint['netG_B2A'])
-        netD_A.load_state_dict(checkpoint['netD_A'])
         netD_B.load_state_dict(checkpoint['netD_B'])
         optimizer_G.load_state_dict(checkpoint['optimizer_G'])
-        optimizer_D_A.load_state_dict(checkpoint['optimizer_D_A'])
         optimizer_D_B.load_state_dict(checkpoint['optimizer_D_B'])
         lr_scheduler_G.load_state_dict(checkpoint['lr_scheduler_G'])
-        lr_scheduler_D_A.load_state_dict(checkpoint['lr_scheduler_D_A'])
         lr_scheduler_D_B.load_state_dict(checkpoint['lr_scheduler_D_B'])
         args.epoch = checkpoint['epoch']
         minLoss = checkpoint['loss']
@@ -185,8 +179,6 @@ def train(models, trainLoader, valLoader, args):
     ###### Training ######
     for epoch in range(args.epoch, args.n_epochs):
         netG_A2B.train()
-        netG_B2A.train()
-        netD_A.train()
         netD_B.train()
         print_log(
             log_fd, "------------------Epoch: {}------------------".format(epoch))
@@ -218,22 +210,22 @@ def train(models, trainLoader, valLoader, args):
             loss_GAN_A2B = criterion_GAN(
                 pred_fake, target_real)  # log(Db(Gb(a)))
 
-            fake_A = netG_B2A(real_B)
-            pred_fake = netD_A(fake_A)
-            loss_GAN_B2A = criterion_GAN(
-                pred_fake, target_real)  # log(Da(Ga(b)))
+            # fake_A = netG_B2A(real_B)
+            # pred_fake = netD_A(fake_A)
+            # loss_GAN_B2A = criterion_GAN(
+            #     pred_fake, target_real)  # log(Da(Ga(b)))
 
             # Cycle loss
-            recovered_A = netG_B2A(fake_B)
-            loss_cycle_ABA = criterion_cycle(
-                recovered_A, real_A)*10.0  # ||Ga(Gb(a))-a||1
+            # recovered_A = netG_B2A(fake_B)
+            # loss_cycle_ABA = criterion_cycle(
+            #     recovered_A, real_A)*10.0  # ||Ga(Gb(a))-a||1
 
-            recovered_B = netG_A2B(fake_A)
-            loss_cycle_BAB = criterion_cycle(
-                recovered_B, real_B)*10.0  # ||Gb(Ga(b))-b||1
+            # recovered_B = netG_A2B(fake_A)
+            # loss_cycle_BAB = criterion_cycle(
+            #     recovered_B, real_B)*10.0  # ||Gb(Ga(b))-b||1
 
             # Total loss
-            loss_G = loss_GAN_A2B + loss_GAN_B2A + loss_cycle_ABA + loss_cycle_BAB
+            loss_G = loss_GAN_A2B
             loss_G.backward()
 
             G_losses.append(loss_G.item())
@@ -242,25 +234,25 @@ def train(models, trainLoader, valLoader, args):
             ###################################
 
             ###### Discriminator A ######
-            optimizer_D_A.zero_grad()
+            # optimizer_D_A.zero_grad()
 
-            # Real loss
-            pred_real = netD_A(real_A)
-            loss_D_real = criterion_GAN(pred_real, target_real)  # log(Da(a))
+            # # Real loss
+            # pred_real = netD_A(real_A)
+            # loss_D_real = criterion_GAN(pred_real, target_real)  # log(Da(a))
 
-            # Fake loss
-            fake_A = fake_A_buffer.push_and_pop(fake_A)
-            pred_fake = netD_A(fake_A.detach())
-            loss_D_fake = criterion_GAN(
-                pred_fake, target_fake)  # log(1-Da(G(b)))
+            # # Fake loss
+            # fake_A = fake_A_buffer.push_and_pop(fake_A)
+            # pred_fake = netD_A(fake_A.detach())
+            # loss_D_fake = criterion_GAN(
+            #     pred_fake, target_fake)  # log(1-Da(G(b)))
 
-            # Total loss
-            loss_D_A = (loss_D_real + loss_D_fake)*0.5
-            loss_D_A.backward()
+            # # Total loss
+            # loss_D_A = (loss_D_real + loss_D_fake)*0.5
+            # loss_D_A.backward()
 
-            D_A_losses.append(loss_D_A.item())
+            # D_A_losses.append(loss_D_A.item())
 
-            optimizer_D_A.step()
+            # optimizer_D_A.step()
             ###################################
 
             ###### Discriminator B ######
@@ -288,13 +280,12 @@ def train(models, trainLoader, valLoader, args):
             train_step += 1
 
             train_writer.add_scalar('loss_G', loss_G.item(), train_step)
-            train_writer.add_scalar('loss_D_A', loss_D_A.item(), train_step)
             train_writer.add_scalar('loss_D_B', loss_D_B.item(), train_step)
 
             if train_step % args.save_iter == 0:
-                img_fake_A = 0.5 * (fake_A.detach().data + 1.0)
-                img_fake_A = (to_pil(img_fake_A[0].data.squeeze(0).cpu()))
-                img_fake_A.save(os.path.join(exp_path, "fake_A.png"))
+                # img_fake_A = 0.5 * (fake_A.detach().data + 1.0)
+                # img_fake_A = (to_pil(img_fake_A[0].data.squeeze(0).cpu()))
+                # img_fake_A.save(os.path.join(exp_path, "fake_A.png"))
 
                 img_fake_B = 0.5 * (fake_B.detach().data + 1.0)
                 img_fake_B = (to_pil(img_fake_B[0].data.squeeze(0).cpu()))
@@ -310,15 +301,12 @@ def train(models, trainLoader, valLoader, args):
 
         # Update learning rates
         lr_scheduler_G.step()
-        lr_scheduler_D_A.step()
         lr_scheduler_D_B.step()
 
         train_loss /= len(trainLoader)
         print_log(log_fd, f"Epoch {epoch} Train Loss: {train_loss}")
 
         netG_A2B.eval()
-        netG_B2A.eval()
-        netD_A.eval()
         netD_B.eval()
         val_loss = 0.0
         with torch.no_grad():
@@ -347,22 +335,22 @@ def train(models, trainLoader, valLoader, args):
                 loss_GAN_A2B = criterion_GAN(
                     pred_fake, target_real)
 
-                fake_A = netG_B2A(real_B)
-                pred_fake = netD_A(fake_A)
-                loss_GAN_B2A = criterion_GAN(
-                    pred_fake, target_real)
+                # fake_A = netG_B2A(real_B)
+                # pred_fake = netD_A(fake_A)
+                # loss_GAN_B2A = criterion_GAN(
+                #     pred_fake, target_real)
 
-                # Cycle loss
-                recovered_A = netG_B2A(fake_B)
-                loss_cycle_ABA = criterion_cycle(
-                    recovered_A, real_A)*10.0
+                # # Cycle loss
+                # recovered_A = netG_B2A(fake_B)
+                # loss_cycle_ABA = criterion_cycle(
+                #     recovered_A, real_A)*10.0
 
-                recovered_B = netG_A2B(fake_A)
-                loss_cycle_BAB = criterion_cycle(
-                    recovered_B, real_B)*10.0
+                # recovered_B = netG_A2B(fake_A)
+                # loss_cycle_BAB = criterion_cycle(
+                #     recovered_B, real_B)*10.0
 
                 # Total loss
-                loss_G = loss_GAN_A2B + loss_GAN_B2A + loss_cycle_ABA + loss_cycle_BAB
+                loss_G = loss_GAN_A2B
                 val_writer.add_scalar('loss_G', loss_G.item(), i)
                 val_loss += loss_G.item()
 
@@ -377,14 +365,10 @@ def train(models, trainLoader, valLoader, args):
                 'epoch': epoch,
                 'loss': val_loss,
                 'netG_A2B': netG_A2B.state_dict(),
-                'netG_B2A': netG_B2A.state_dict(),
-                'netD_A': netD_A.state_dict(),
                 'netD_B': netD_B.state_dict(),
                 'optimizer_G': optimizer_G.state_dict(),
-                'optimizer_D_A': optimizer_D_A.state_dict(),
                 'optimizer_D_B': optimizer_D_B.state_dict(),
                 'lr_scheduler_G': lr_scheduler_G.state_dict(),
-                'lr_scheduler_D_A': lr_scheduler_D_A.state_dict(),
                 'lr_scheduler_D_B': lr_scheduler_D_B.state_dict(),
                 'loss': val_loss
             }, bestSavePath)
@@ -394,14 +378,10 @@ def train(models, trainLoader, valLoader, args):
             'epoch': epoch,
             'loss': val_loss,
             'netG_A2B': netG_A2B.state_dict(),
-            'netG_B2A': netG_B2A.state_dict(),
-            'netD_A': netD_A.state_dict(),
             'netD_B': netD_B.state_dict(),
             'optimizer_G': optimizer_G.state_dict(),
-            'optimizer_D_A': optimizer_D_A.state_dict(),
             'optimizer_D_B': optimizer_D_B.state_dict(),
             'lr_scheduler_G': lr_scheduler_G.state_dict(),
-            'lr_scheduler_D_A': lr_scheduler_D_A.state_dict(),
             'lr_scheduler_D_B': lr_scheduler_D_B.state_dict(),
             'loss': val_loss
         }, lastSavePath)

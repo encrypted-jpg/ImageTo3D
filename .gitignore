@@ -11,3 +11,6 @@ exp/*
 *.npy
 temp.py
 stdout.txt
+.gitignore
+*.json
+logs/*
