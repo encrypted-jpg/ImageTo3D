@@ -384,7 +384,7 @@ def train(models, trainLoader, valLoader, args):
 
         val_loss /= len(valLoader)
         print_log(
-            log_fd, f"Epoch {epoch} Val Loss: {val_loss} Learning Rate: {lr_scheduler_G.get_lr()[0]}")
+            log_fd, f"Epoch {epoch} Val Loss: {val_loss} Learning Rate: {lr_scheduler_G.get_last_lr()[0]}")
 
         if val_loss < minLoss:
             minLoss = val_loss
