@@ -155,10 +155,6 @@ def train(models, trainLoader, valLoader, args):
     lr_scheduler_G, lr_scheduler_D_A, lr_scheduler_D_B = get_scheduler(
         optimizer_G, optimizer_D_A, optimizer_D_B, args)
 
-    train_step = 0
-    minLoss = 1e10
-    minLossEpoch = 0
-
     if args.resume:
         print_log(log_fd, f"Loading checkpoint from {args.modelPath}")
         checkpoint = torch.load(args.modelPath)
@@ -166,17 +162,18 @@ def train(models, trainLoader, valLoader, args):
         netG_B2A.load_state_dict(checkpoint['netG_B2A'])
         netD_A.load_state_dict(checkpoint['netD_A'])
         netD_B.load_state_dict(checkpoint['netD_B'])
-        optimizer_G.load_state_dict(checkpoint['optimizer_G'])
-        optimizer_D_A.load_state_dict(checkpoint['optimizer_D_A'])
-        optimizer_D_B.load_state_dict(checkpoint['optimizer_D_B'])
-        lr_scheduler_G.load_state_dict(checkpoint['lr_scheduler_G'])
-        lr_scheduler_D_A.load_state_dict(checkpoint['lr_scheduler_D_A'])
-        lr_scheduler_D_B.load_state_dict(checkpoint['lr_scheduler_D_B'])
-        args.epoch = checkpoint['epoch']
-        minLoss = checkpoint['loss']
-        minLossEpoch = args.epoch
+        # optimizer_G.load_state_dict(checkpoint['optimizer_G'])
+        # optimizer_D_A.load_state_dict(checkpoint['optimizer_D_A'])
+        # optimizer_D_B.load_state_dict(checkpoint['optimizer_D_B'])
+        # lr_scheduler_G.load_state_dict(checkpoint['lr_scheduler_G'])
+        # lr_scheduler_D_A.load_state_dict(checkpoint['lr_scheduler_D_A'])
+        # lr_scheduler_D_B.load_state_dict(checkpoint['lr_scheduler_D_B'])
+        args.epoch = checkpoint['epoch'] + 1
+        # minLoss = checkpoint['loss']
+        # minLossEpoch = args.epoch
+        lr_scheduler_G, lr_scheduler_D_A, lr_scheduler_D_B = get_scheduler(optimizer_G, optimizer_D_A, optimizer_D_B, args)
         print_log(
-            log_fd, f"Checkpoint loaded (epoch {args.epoch}, loss {minLoss})")
+            log_fd, f"Checkpoint loaded (epoch {checkpoint['epoch']}, loss {checkpoint['loss']})")
 
     # Inputs & targets memory allocation
 
@@ -195,7 +192,10 @@ def train(models, trainLoader, valLoader, args):
     D_A_losses = []
     D_B_losses = []
     to_pil = transforms.ToPILImage()
-
+    
+    train_step = 0
+    minLoss = 1e10
+    minLossEpoch = 0
     ###### Training ######
     for epoch in range(args.epoch, args.n_epochs):
         netG_A2B.train()
@@ -248,10 +248,16 @@ def train(models, trainLoader, valLoader, args):
 
             # Total loss
             loss_G = loss_GAN_A2B + loss_GAN_B2A + loss_cycle_ABA + loss_cycle_BAB
+            # check for nan of INF
+            if torch.isnan(loss_G) or torch.isinf(loss_G):
+                print_log(log_fd, "Loss G is nan or inf")
+                print_log(log_fd, f"Loss GAN A2B: {loss_GAN_A2B}")
+                print_log(log_fd, f"Taxonomy ID: {taxonomy_id} Model ID: {model_id}")
+
             loss_G.backward()
 
             G_losses.append(loss_G.item())
-
+            torch.nn.utils.clip_grad_norm_(itertools.chain(netG_A2B.parameters(), netG_B2A.parameters()), 5.0)
             optimizer_G.step()
             ###################################
 
@@ -274,6 +280,7 @@ def train(models, trainLoader, valLoader, args):
 
             D_A_losses.append(loss_D_A.item())
 
+            torch.nn.utils.clip_grad_norm_(netD_A.parameters(), 5.0)
             optimizer_D_A.step()
             ###################################
 
@@ -296,6 +303,7 @@ def train(models, trainLoader, valLoader, args):
 
             D_B_losses.append(loss_D_B.item())
 
+            torch.nn.utils.clip_grad_norm_(netD_B.parameters(), 5.0)
             optimizer_D_B.step()
             ###################################
             train_loss += loss_G.item()

@@ -9,7 +9,7 @@ exp/*
 *.pcd
 *.obj
 *.npy
-temp.py
+temp*.py
 stdout.txt
 .gitignore
 *.json

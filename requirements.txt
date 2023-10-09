@@ -5,3 +5,4 @@ tensorboardx
 visdom
 numpy
 matplotlib
+opencv-python

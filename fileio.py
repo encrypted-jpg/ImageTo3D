@@ -3,11 +3,12 @@ import numpy as np
 import open3d
 import os
 from PIL import Image
+import cv2
 
 
 class IO:
     @classmethod
-    def get(cls, file_path):
+    def get(cls, file_path, options=None):
         _, file_extension = os.path.splitext(file_path)
 
         if file_extension in ['.npy']:
@@ -19,7 +20,7 @@ class IO:
         elif file_extension in ['.txt']:
             return cls._read_txt(file_path)
         elif file_extension in ['.png']:
-            return cls._read_png(file_path)
+            return cls._read_png(file_path, options)
         else:
             raise Exception('Unsupported file extension: %s' % file_extension)
 
@@ -46,5 +47,8 @@ class IO:
         return f['data'][()]
 
     @classmethod
-    def _read_png(cls, file_path):
-        return Image.open(file_path)
+    def _read_png(cls, file_path, options=None):
+        if options is None:
+            return Image.open(file_path)
+        elif options == "cv2":
+            return cv2.imread(file_path)
