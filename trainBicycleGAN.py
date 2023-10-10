@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 import torch.nn.functional as F
+from torchvision.utils import save_image
 from torch.utils.data import DataLoader
 import numpy as np
 from torch.autograd import Variable
@@ -9,7 +10,7 @@ import os
 import open3d as o3d
 import argparse
 import json
-from models.cyclegan import Generator, Discriminator
+from models.bicyclegan import Generator, MultiDiscriminator, Encoder
 from tqdm import tqdm
 import time
 from PIL import Image
@@ -89,6 +90,29 @@ def save_imgs(img1, img2, img3, img4, path):
     concatenated_image.save(path)
 
 
+def save_batch_imgs(real_A, fake_B, path):
+    img_samples = None
+    fake_B = [x for x in fake_B.data.cpu()]
+    mids = [len(fake_B) // 4, len(fake_B) // 2, 3 * len(fake_B) // 4]
+    i = 0
+    img_list = []
+    for img_A, f_B in zip(real_A, fake_B):
+        f_B = f_B.view(1, *f_B.shape)
+        img_A = img_A.view(1, *img_A.shape)
+        img_sample = torch.cat((img_A, f_B), -1)
+        img_sample = img_sample.view(1, *img_sample.shape)
+        # Concatenate with previous samples vertically
+        img_samples = img_sample if img_samples is None else torch.cat(
+            (img_samples, img_sample), -2)
+        i += 1
+        if i in mids:
+            img_list.append(img_samples)
+            img_samples = None
+    img_list.append(img_samples)
+    img_samples = torch.cat(img_list, -1)
+    save_image(img_samples[0][0], path, normalize=True)
+
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -106,12 +130,12 @@ def dataLoaders(args):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ]
 
-    trainDataset = DiffImageDataset(
-        folder, json, mode='train', transform=transform, b_tag=args.b_tag)
-    testDataset = DiffImageDataset(
-        folder, json, mode='test', transform=transform, b_tag=args.b_tag)
-    valDataset = DiffImageDataset(
-        folder, json, mode='val', transform=transform, b_tag=args.b_tag)
+    trainDataset = DiffImageDataset(folder, json, mode='train', transform=transform,
+                                    b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+    testDataset = DiffImageDataset(folder, json, mode='test', transform=transform,
+                                   b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+    valDataset = DiffImageDataset(folder, json, mode='val', transform=transform,
+                                  b_tag=args.b_tag, img_height=args.size, img_width=args.size)
 
     trainLoader = DataLoader(trainDataset, batch_size=batch_size, shuffle=True)
     testLoader = DataLoader(testDataset, batch_size=batch_size, shuffle=False)
@@ -119,40 +143,52 @@ def dataLoaders(args):
     return trainLoader, testLoader, valLoader
 
 
-def get_model():
-    input_nc = 3
-    output_nc = 3
-    netG_A2B = Generator(input_nc, output_nc)
-    netG_B2A = Generator(output_nc, input_nc)
-    netD_A = Discriminator(input_nc)
-    netD_B = Discriminator(output_nc)
-    print(
-        "[+] Number of parameters in G_A2B: {:.3f} M".format(count_parameters(netG_A2B) / 1e6))
-    print(
-        "[+] Number of parameters in G_B2A: {:.3f} M".format(count_parameters(netG_B2A) / 1e6))
-    print(
-        "[+] Number of parameters in D_A: {:.3f} M".format(count_parameters(netD_A) / 1e6))
-    print(
-        "[+] Number of parameters in D_B: {:.3f} M".format(count_parameters(netD_B) / 1e6))
-    return netG_A2B, netG_B2A, netD_A, netD_B
+def reparameterization(mu, logvar, Tensor, args):
+    std = torch.exp(logvar / 2)
+    sampled_z = Variable(Tensor(np.random.normal(
+        0, 1, (mu.size(0), args.latent_dim))))
+    z = sampled_z * std + mu
+    return z
 
 
-def get_scheduler(optimizer_G, optimizer_D_A, optimizer_D_B, args):
+def get_model(args):
+    input_shape = (3, args.size, args.size)
+    generator = Generator(args.latent_dim, input_shape)
+    encoder = Encoder(args.latent_dim, input_shape)
+    D_VAE = MultiDiscriminator(input_shape)
+    D_LR = MultiDiscriminator(input_shape)
+    print(
+        "[+] Number of parameters in Generator: {:.3f} M".format(count_parameters(generator) / 1e6))
+    print(
+        "[+] Number of parameters in Encoder: {:.3f} M".format(count_parameters(encoder) / 1e6))
+    print(
+        "[+] Number of parameters in D_VAE: {:.3f} M".format(count_parameters(D_VAE) / 1e6))
+    print(
+        "[+] Number of parameters in D_LR: {:.3f} M".format(count_parameters(D_LR) / 1e6))
+    return generator, encoder, D_VAE, D_LR
+
+
+def get_scheduler(optimizer_G, optimizer_E, optimizer_D_VAE, optimizer_D_LR, args):
     if args.scheduler == 'step':
         lr_scheduler_G = torch.optim.lr_scheduler.StepLR(
             optimizer_G, step_size=1, gamma=args.gamma)
-        lr_scheduler_D_A = torch.optim.lr_scheduler.StepLR(
-            optimizer_D_A, step_size=1, gamma=args.gamma)
-        lr_scheduler_D_B = torch.optim.lr_scheduler.StepLR(
-            optimizer_D_B, step_size=1, gamma=args.gamma)
+        lr_scheduler_E = torch.optim.lr_scheduler.StepLR(
+            optimizer_E, step_size=1, gamma=args.gamma)
+        lr_scheduler_D_VAE = torch.optim.lr_scheduler.StepLR(
+            optimizer_D_VAE, step_size=1, gamma=args.gamma)
+        lr_scheduler_D_LR = torch.optim.lr_scheduler.StepLR(
+            optimizer_D_LR, step_size=1, gamma=args.gamma)
+
     else:
         lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(
             optimizer_G, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
-        lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(
-            optimizer_D_A, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
-        lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(
-            optimizer_D_B, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
-    return lr_scheduler_G, lr_scheduler_D_A, lr_scheduler_D_B
+        lr_scheduler_E = torch.optim.lr_scheduler.LambdaLR(
+            optimizer_E, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
+        lr_scheduler_D_VAE = torch.optim.lr_scheduler.LambdaLR(
+            optimizer_D_VAE, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
+        lr_scheduler_D_LR = torch.optim.lr_scheduler.LambdaLR(
+            optimizer_D_LR, lr_lambda=LambdaLR(args.n_epochs, args.epoch, args.decay_epoch).step)
+    return lr_scheduler_G, lr_scheduler_E, lr_scheduler_D_VAE, lr_scheduler_D_LR
 
 
 def train(models, trainLoader, valLoader, args):
@@ -165,66 +201,56 @@ def train(models, trainLoader, valLoader, args):
     device = torch.device(
         f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 
-    netG_A2B, netG_B2A, netD_A, netD_B = models
-    netG_A2B = netG_A2B.to(device)
-    netG_B2A = netG_B2A.to(device)
-    netD_A = netD_A.to(device)
-    netD_B = netD_B.to(device)
+    generator, encoder, D_VAE, D_LR = models
+    generator = generator.to(device)
+    encoder = encoder.to(device)
+    D_VAE = D_VAE.to(device)
+    D_LR = D_LR.to(device)
 
     # Lossess
-    criterion_GAN = torch.nn.MSELoss()  # lsgan
-    # criterion_GAN = torch.nn.BCEWithLogitsLoss() #vanilla
-    criterion_cycle = torch.nn.L1Loss()
-    criterion_identity = torch.nn.L1Loss()
+    mae_loss = torch.nn.L1Loss()
+    mae_loss = mae_loss.to(device)
 
     # Optimizers & LR schedulers
-    optimizer_G = torch.optim.Adam(itertools.chain(netG_A2B.parameters(), netG_B2A.parameters()),
-                                   lr=args.lr, betas=(0.5, 0.999))
-    optimizer_D_A = torch.optim.Adam(
-        netD_A.parameters(), lr=args.lr, betas=(0.5, 0.999))
-    optimizer_D_B = torch.optim.Adam(
-        netD_B.parameters(), lr=args.lr, betas=(0.5, 0.999))
+    optimizer_E = torch.optim.Adam(encoder.parameters(), lr=args.lr)
+    optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr)
+    optimizer_D_VAE = torch.optim.Adam(D_VAE.parameters(), lr=args.lr)
+    optimizer_D_LR = torch.optim.Adam(D_LR.parameters(), lr=args.lr)
 
-    lr_scheduler_G, lr_scheduler_D_A, lr_scheduler_D_B = get_scheduler(
-        optimizer_G, optimizer_D_A, optimizer_D_B, args)
+    lr_scheduler_G, lr_scheduler_E, lr_scheduler_D_VAE, lr_scheduler_D_LR = get_scheduler(
+        optimizer_G, optimizer_E, optimizer_D_VAE, optimizer_D_LR, args)
 
     if args.resume:
         print_log(log_fd, f"Loading checkpoint from {args.modelPath}")
         checkpoint = torch.load(args.modelPath)
-        netG_A2B.load_state_dict(checkpoint['netG_A2B'])
-        netG_B2A.load_state_dict(checkpoint['netG_B2A'])
-        netD_A.load_state_dict(checkpoint['netD_A'])
-        netD_B.load_state_dict(checkpoint['netD_B'])
+        generator.load_state_dict(checkpoint['generator'])
+        encoder.load_state_dict(checkpoint['encoder'])
+        D_VAE.load_state_dict(checkpoint['D_VAE'])
+        D_LR.load_state_dict(checkpoint['D_LR'])
         # optimizer_G.load_state_dict(checkpoint['optimizer_G'])
-        # optimizer_D_A.load_state_dict(checkpoint['optimizer_D_A'])
-        # optimizer_D_B.load_state_dict(checkpoint['optimizer_D_B'])
+        # optimizer_E.load_state_dict(checkpoint['optimizer_E'])
+        # optimizer_D_VAE.load_state_dict(checkpoint['optimizer_D_VAE'])
+        # optimizer_D_LR.load_state_dict(checkpoint['optimizer_D_LR'])
         # lr_scheduler_G.load_state_dict(checkpoint['lr_scheduler_G'])
-        # lr_scheduler_D_A.load_state_dict(checkpoint['lr_scheduler_D_A'])
-        # lr_scheduler_D_B.load_state_dict(checkpoint['lr_scheduler_D_B'])
+        # lr_scheduler_E.load_state_dict(checkpoint['lr_scheduler_E'])
+        # lr_scheduler_D_VAE.load_state_dict(checkpoint['lr_scheduler_D_VAE'])
+        # lr_scheduler_D_LR.load_state_dict(checkpoint['lr_scheduler_D_LR'])
         args.epoch = checkpoint['epoch'] + 1
         # minLoss = checkpoint['loss']
         # minLossEpoch = args.epoch
-        lr_scheduler_G, lr_scheduler_D_A, lr_scheduler_D_B = get_scheduler(
-            optimizer_G, optimizer_D_A, optimizer_D_B, args)
+        lr_scheduler_G, lr_scheduler_E, lr_scheduler_D_VAE, lr_scheduler_D_LR = get_scheduler(
+            optimizer_G, optimizer_E, optimizer_D_VAE, optimizer_D_LR, args)
         print_log(
             log_fd, f"Checkpoint loaded (epoch {checkpoint['epoch']}, loss {checkpoint['loss']})")
 
     # Inputs & targets memory allocation
 
     Tensor = torch.cuda.FloatTensor if device.type == 'cuda' else torch.Tensor
-    input_A = Tensor(args.batch_size, 3, args.size, args.size).to(device)
-    input_B = Tensor(args.batch_size, 3, args.size, args.size).to(device)
-    target_real = Variable(
-        Tensor(args.batch_size).fill_(1.0), requires_grad=False).to(device)
-    target_fake = Variable(
-        Tensor(args.batch_size).fill_(0.0), requires_grad=False).to(device)
-
-    fake_A_buffer = ReplayBuffer()
-    fake_B_buffer = ReplayBuffer()
+    # Adversarial loss
+    valid = 1
+    fake = 0
 
     G_losses = []
-    D_A_losses = []
-    D_B_losses = []
     to_pil = transforms.ToPILImage()
 
     train_step = 0
@@ -232,10 +258,10 @@ def train(models, trainLoader, valLoader, args):
     minLossEpoch = 0
     ###### Training ######
     for epoch in range(args.epoch, args.n_epochs):
-        netG_A2B.train()
-        netG_B2A.train()
-        netD_A.train()
-        netD_B.train()
+        generator.train()
+        encoder.train()
+        D_VAE.train()
+        D_LR.train()
         print_log(
             log_fd, "------------------Epoch: {}------------------".format(epoch))
         train_loss = 0.0
@@ -244,140 +270,120 @@ def train(models, trainLoader, valLoader, args):
             loader.set_description(f"Loss: {(train_loss/(i+1)):.4f}")
             # Set model input
             taxonomy_id, model_id, (A, B) = batch
-            real_A = Variable(input_A.copy_(A)).to(device)
-            real_B = Variable(input_B.copy_(B)).to(device)
+            # Set model input
+            real_A = Variable(A.type(Tensor))
+            real_B = Variable(B.type(Tensor))
 
-            ###### Generators A2B and B2A ######
+            # -------------------------------
+            #  Train Generator and Encoder
+            # -------------------------------
+
+            optimizer_E.zero_grad()
             optimizer_G.zero_grad()
 
-            # # Identity loss
-            # # G_A2B(B) should equal B if real B is fed
-            # same_B = netG_A2B(real_B)
-            # loss_identity_B = criterion_identity(
-            #     same_B, real_B)*5.0  # ||Gb(b)-b||1
-            # # G_B2A(A) should equal A if real A is fed
-            # same_A = netG_B2A(real_A)
-            # loss_identity_A = criterion_identity(
-            #     same_A, real_A)*5.0  # ||Ga(a)-a||1
+            # ----------
+            # cVAE-GAN
+            # ----------
 
-            # GAN loss
-            fake_B = netG_A2B(real_A)
-            pred_fake = netD_B(fake_B)
-            loss_GAN_A2B = criterion_GAN(
-                pred_fake, target_real)  # log(Db(Gb(a)))
+            # Produce output using encoding of B (cVAE-GAN)
+            mu, logvar = encoder(real_B)
+            encoded_z = reparameterization(mu, logvar, Tensor, args)
+            fake_B = generator(real_A, encoded_z)
 
-            fake_A = netG_B2A(real_B)
-            pred_fake = netD_A(fake_A)
-            loss_GAN_B2A = criterion_GAN(
-                pred_fake, target_real)  # log(Da(Ga(b)))
+            # Pixelwise loss of translated image by VAE
+            loss_pixel = mae_loss(fake_B, real_B)
+            # Kullback-Leibler divergence of encoded B
+            loss_kl = 0.5 * torch.sum(torch.exp(logvar) + mu ** 2 - logvar - 1)
+            # Adversarial loss
+            loss_VAE_GAN = D_VAE.compute_loss(fake_B, valid)
 
-            # Cycle loss
-            recovered_A = netG_B2A(fake_B)
-            loss_cycle_ABA = criterion_cycle(
-                recovered_A, real_A)*10.0  # ||Ga(Gb(a))-a||1
+            # ---------
+            # cLR-GAN
+            # ---------
 
-            recovered_B = netG_A2B(fake_A)
-            loss_cycle_BAB = criterion_cycle(
-                recovered_B, real_B)*10.0  # ||Gb(Ga(b))-b||1
+            # Produce output using sampled z (cLR-GAN)
+            sampled_z = Variable(Tensor(np.random.normal(
+                0, 1, (real_A.size(0), args.latent_dim))))
+            _fake_B = generator(real_A, sampled_z)
+            # cLR Loss: Adversarial loss
+            loss_LR_GAN = D_LR.compute_loss(_fake_B, valid)
 
-            # Total loss
-            loss_G = loss_GAN_A2B + loss_GAN_B2A + loss_cycle_ABA + loss_cycle_BAB
-            # check for nan of INF
-            if torch.isnan(loss_G) or torch.isinf(loss_G):
-                print_log(log_fd, "Loss G is nan or inf")
-                print_log(log_fd, f"Loss GAN A2B: {loss_GAN_A2B}")
-                print_log(
-                    log_fd, f"Taxonomy ID: {taxonomy_id} Model ID: {model_id}")
+            # ----------------------------------
+            # Total Loss (Generator + Encoder)
+            # ----------------------------------
 
-            loss_G.backward()
+            loss_GE = loss_VAE_GAN + loss_LR_GAN + args.lambda_pixel * \
+                loss_pixel + args.lambda_kl * loss_kl
 
-            G_losses.append(loss_G.item())
-            torch.nn.utils.clip_grad_norm_(itertools.chain(
-                netG_A2B.parameters(), netG_B2A.parameters()), 5.0)
+            loss_GE.backward(retain_graph=True)
+            optimizer_E.step()
+
+            # ---------------------
+            # Generator Only Loss
+            # ---------------------
+
+            # Latent L1 loss
+            _mu, _ = encoder(_fake_B)
+            loss_latent = args.lambda_latent * mae_loss(_mu, sampled_z)
+
+            loss_latent.backward()
             optimizer_G.step()
-            ###################################
 
-            ###### Discriminator A ######
-            optimizer_D_A.zero_grad()
+            # ----------------------------------
+            #  Train Discriminator (cVAE-GAN)
+            # ----------------------------------
 
-            # Real loss
-            pred_real = netD_A(real_A)
-            loss_D_real = criterion_GAN(pred_real, target_real)  # log(Da(a))
+            optimizer_D_VAE.zero_grad()
 
-            # Fake loss
-            fake_A = fake_A_buffer.push_and_pop(fake_A)
-            pred_fake = netD_A(fake_A.detach())
-            loss_D_fake = criterion_GAN(
-                pred_fake, target_fake)  # log(1-Da(G(b)))
+            loss_D_VAE = D_VAE.compute_loss(
+                real_B, valid) + D_VAE.compute_loss(fake_B.detach(), fake)
 
-            # Total loss
-            loss_D_A = (loss_D_real + loss_D_fake)*0.5
-            loss_D_A.backward()
+            loss_D_VAE.backward()
+            optimizer_D_VAE.step()
 
-            D_A_losses.append(loss_D_A.item())
+            # ---------------------------------
+            #  Train Discriminator (cLR-GAN)
+            # ---------------------------------
 
-            torch.nn.utils.clip_grad_norm_(netD_A.parameters(), 5.0)
-            optimizer_D_A.step()
-            ###################################
+            optimizer_D_LR.zero_grad()
 
-            ###### Discriminator B ######
-            optimizer_D_B.zero_grad()
+            loss_D_LR = D_LR.compute_loss(
+                real_B, valid) + D_LR.compute_loss(_fake_B.detach(), fake)
 
-            # Real loss
-            pred_real = netD_B(real_B)
-            loss_D_real = criterion_GAN(pred_real, target_real)  # log(Db(b))
+            loss_D_LR.backward()
+            optimizer_D_LR.step()
 
-            # Fake loss
-            fake_B = fake_B_buffer.push_and_pop(fake_B)
-            pred_fake = netD_B(fake_B.detach())
-            loss_D_fake = criterion_GAN(
-                pred_fake, target_fake)  # log(1-Db(G(a)))
-
-            # Total loss
-            loss_D_B = (loss_D_real + loss_D_fake)*0.5
-            loss_D_B.backward()
-
-            D_B_losses.append(loss_D_B.item())
-
-            torch.nn.utils.clip_grad_norm_(netD_B.parameters(), 5.0)
-            optimizer_D_B.step()
-            ###################################
-            train_loss += loss_G.item()
+            train_loss += loss_GE.item()
             train_step += 1
 
-            train_writer.add_scalar('loss_G', loss_G.item(), train_step)
-            train_writer.add_scalar('loss_D_A', loss_D_A.item(), train_step)
-            train_writer.add_scalar('loss_D_B', loss_D_B.item(), train_step)
+            train_writer.add_scalar('loss_GE', loss_GE.item(), train_step)
+            train_writer.add_scalar(
+                'loss_D_VAE', loss_D_VAE.item(), train_step)
+            train_writer.add_scalar('loss_D_LR', loss_D_LR.item(), train_step)
+            train_writer.add_scalar(
+                'loss_latent', loss_latent.item(), train_step)
+            train_writer.add_scalar(
+                'loss_pixel', loss_pixel.item(), train_step)
+            train_writer.add_scalar('loss_kl', loss_kl.item(), train_step)
 
             if train_step % args.save_iter == 0:
-                img_fake_A = 0.5 * (fake_A.detach().data + 1.0)
-                img_fake_A = (to_pil(img_fake_A[0].data.squeeze(0).cpu()))
-                img_fake_A.save(os.path.join(exp_path, "fake_A.png"))
-
-                img_fake_B = 0.5 * (fake_B.detach().data + 1.0)
-                img_fake_B = (to_pil(img_fake_B[0].data.squeeze(0).cpu()))
-                img_fake_B.save(os.path.join(exp_path, "fake_B.png"))
-
-                img_real_A = 0.5 * (real_A.detach().data + 1.0)
-                img_real_A = (to_pil(img_real_A[0].data.squeeze(0).cpu()))
-                img_real_A.save(os.path.join(exp_path, "real_A.png"))
-
-                img_real_B = 0.5 * (real_B.detach().data + 1.0)
-                img_real_B = (to_pil(img_real_B[0].data.squeeze(0).cpu()))
-                img_real_B.save(os.path.join(exp_path, "real_B.png"))
+                save_batch_imgs(A, fake_B, os.path.join(
+                    exp_path, f"train_{train_step}.png"))
 
         # Update learning rates
         lr_scheduler_G.step()
-        lr_scheduler_D_A.step()
-        lr_scheduler_D_B.step()
+        lr_scheduler_E.step()
+        lr_scheduler_D_VAE.step()
+        lr_scheduler_D_LR.step()
 
         train_loss /= len(trainLoader)
         print_log(log_fd, f"Epoch {epoch} Train Loss: {train_loss}")
 
-        netG_A2B.eval()
-        netG_B2A.eval()
-        netD_A.eval()
-        netD_B.eval()
+        ###### Validation ######
+        generator.eval()
+        encoder.eval()
+        D_VAE.eval()
+        D_LR.eval()
         val_loss = 0.0
         with torch.no_grad():
             loader = tqdm(valLoader)
@@ -385,46 +391,52 @@ def train(models, trainLoader, valLoader, args):
                 loader.set_description(f"Loss: {(val_loss/(i+1)):.4f}")
                 # Set model input
                 taxonomy_id, model_id, (A, B) = batch
-                real_A = Variable(input_A.copy_(A))
-                real_B = Variable(input_B.copy_(B))
+                real_A = Variable(A.type(Tensor))
+                real_B = Variable(B.type(Tensor))
 
-                ###### Generators A2B and B2A ######
+                # -------------------------------
+                #  Train Generator and Encoder
+                # -------------------------------
+
+                optimizer_E.zero_grad()
                 optimizer_G.zero_grad()
 
-                # # Identity loss
-                # # G_A2B(B) should equal B if real B is fed
-                # same_B = netG_A2B(real_B)
-                # loss_identity_B = criterion_identity(
-                #     same_B, real_B)*5.0  # ||Gb(b)-b||1
-                # # G_B2A(A) should equal A if real A is fed
-                # same_A = netG_B2A(real_A)
-                # loss_identity_A = criterion_identity(
-                #     same_A, real_A)*5.0
+                # ----------
+                # cVAE-GAN
+                # ----------
 
-                # GAN loss
-                fake_B = netG_A2B(real_A)
-                pred_fake = netD_B(fake_B)
-                loss_GAN_A2B = criterion_GAN(
-                    pred_fake, target_real)
+                # Produce output using encoding of B (cVAE-GAN)
+                mu, logvar = encoder(real_B)
+                encoded_z = reparameterization(mu, logvar, Tensor, args)
+                fake_B = generator(real_A, encoded_z)
 
-                fake_A = netG_B2A(real_B)
-                pred_fake = netD_A(fake_A)
-                loss_GAN_B2A = criterion_GAN(
-                    pred_fake, target_real)
+                # Pixelwise loss of translated image by VAE
+                loss_pixel = mae_loss(fake_B, real_B)
+                # Kullback-Leibler divergence of encoded B
+                loss_kl = 0.5 * \
+                    torch.sum(torch.exp(logvar) + mu ** 2 - logvar - 1)
+                # Adversarial loss
+                loss_VAE_GAN = D_VAE.compute_loss(fake_B, valid)
 
-                # Cycle loss
-                recovered_A = netG_B2A(fake_B)
-                loss_cycle_ABA = criterion_cycle(
-                    recovered_A, real_A)*10.0
+                # ---------
+                # cLR-GAN
+                # ---------
 
-                recovered_B = netG_A2B(fake_A)
-                loss_cycle_BAB = criterion_cycle(
-                    recovered_B, real_B)*10.0
+                # Produce output using sampled z (cLR-GAN)
+                sampled_z = Variable(Tensor(np.random.normal(
+                    0, 1, (real_A.size(0), args.latent_dim))))
+                _fake_B = generator(real_A, sampled_z)
+                # cLR Loss: Adversarial loss
+                loss_LR_GAN = D_LR.compute_loss(_fake_B, valid)
 
-                # Total loss
-                loss_G = loss_GAN_A2B + loss_GAN_B2A + loss_cycle_ABA + loss_cycle_BAB
-                val_writer.add_scalar('loss_G', loss_G.item(), i)
-                val_loss += loss_G.item()
+                # ----------------------------------
+                # Total Loss (Generator + Encoder)
+                # ----------------------------------
+
+                loss_GE = loss_VAE_GAN + loss_LR_GAN + args.lambda_pixel * \
+                    loss_pixel + args.lambda_kl * loss_kl
+                val_writer.add_scalar('loss_GE', loss_GE.item(), i)
+                val_loss += loss_GE.item()
 
         val_loss /= len(valLoader)
         print_log(
@@ -436,34 +448,36 @@ def train(models, trainLoader, valLoader, args):
             torch.save({
                 'epoch': epoch,
                 'loss': val_loss,
-                'netG_A2B': netG_A2B.state_dict(),
-                'netG_B2A': netG_B2A.state_dict(),
-                'netD_A': netD_A.state_dict(),
-                'netD_B': netD_B.state_dict(),
+                'generator': generator.state_dict(),
+                'encoder': encoder.state_dict(),
+                'D_VAE': D_VAE.state_dict(),
+                'D_LR': D_LR.state_dict(),
                 'optimizer_G': optimizer_G.state_dict(),
-                'optimizer_D_A': optimizer_D_A.state_dict(),
-                'optimizer_D_B': optimizer_D_B.state_dict(),
+                'optimizer_E': optimizer_E.state_dict(),
+                'optimizer_D_VAE': optimizer_D_VAE.state_dict(),
+                'optimizer_D_LR': optimizer_D_LR.state_dict(),
                 'lr_scheduler_G': lr_scheduler_G.state_dict(),
-                'lr_scheduler_D_A': lr_scheduler_D_A.state_dict(),
-                'lr_scheduler_D_B': lr_scheduler_D_B.state_dict(),
-                'loss': val_loss
+                'lr_scheduler_E': lr_scheduler_E.state_dict(),
+                'lr_scheduler_D_VAE': lr_scheduler_D_VAE.state_dict(),
+                'lr_scheduler_D_LR': lr_scheduler_D_LR.state_dict(),
             }, bestSavePath)
             print_log(log_fd, f"Epoch {epoch} Best Model Saved")
 
         torch.save({
             'epoch': epoch,
             'loss': val_loss,
-            'netG_A2B': netG_A2B.state_dict(),
-            'netG_B2A': netG_B2A.state_dict(),
-            'netD_A': netD_A.state_dict(),
-            'netD_B': netD_B.state_dict(),
+            'generator': generator.state_dict(),
+            'encoder': encoder.state_dict(),
+            'D_VAE': D_VAE.state_dict(),
+            'D_LR': D_LR.state_dict(),
             'optimizer_G': optimizer_G.state_dict(),
-            'optimizer_D_A': optimizer_D_A.state_dict(),
-            'optimizer_D_B': optimizer_D_B.state_dict(),
+            'optimizer_E': optimizer_E.state_dict(),
+            'optimizer_D_VAE': optimizer_D_VAE.state_dict(),
+            'optimizer_D_LR': optimizer_D_LR.state_dict(),
             'lr_scheduler_G': lr_scheduler_G.state_dict(),
-            'lr_scheduler_D_A': lr_scheduler_D_A.state_dict(),
-            'lr_scheduler_D_B': lr_scheduler_D_B.state_dict(),
-            'loss': val_loss
+            'lr_scheduler_E': lr_scheduler_E.state_dict(),
+            'lr_scheduler_D_VAE': lr_scheduler_D_VAE.state_dict(),
+            'lr_scheduler_D_LR': lr_scheduler_D_LR.state_dict(),
         }, lastSavePath)
 
         print_log(log_fd, "Last Model saved (best loss {:.4f} at epoch {})" .format(
@@ -571,8 +585,8 @@ def test(models, testLoader, args):
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--folder", type=str, default="ShapeNetRender",
-                        help="Folder containing the data")
+    parser.add_argument(
+        "--folder", type=str, default="ShapeNetRender", help="Folder containing the data")
     parser.add_argument("--json", type=str, default="final.json",
                         help="JSON file containing the data")
     parser.add_argument("--b_tag", type=str, default="depth",
@@ -580,15 +594,17 @@ def get_args():
     parser.add_argument("--log_dir", type=str, default="logs", help="Log dir")
     parser.add_argument("--exp", type=str, default="exp", help="Experiment")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
-    parser.add_argument("--size", type=int, default=224, help="Image size")
+    parser.add_argument("--size", type=int, default=256, help="Image size")
+    parser.add_argument("--latent_dim", type=int,
+                        default=8, help="Latent dimension")
     parser.add_argument("--epoch", type=int, default=0, help="Epoch to start")
     parser.add_argument("--scheduler", type=str,
                         default="step", help="Scheduler")
     parser.add_argument("--gamma", type=float, default=0.85, help="Gamma")
     parser.add_argument("--n_epochs", type=int, default=30,
                         help="Number of epochs")
-    parser.add_argument("--decay_epoch", type=int, default=10,
-                        help="Decay epoch")
+    parser.add_argument("--decay_epoch", type=int,
+                        default=10, help="Decay epoch")
     parser.add_argument("--save_iter", type=int,
                         default=20, help="Save interval")
     parser.add_argument("--lr", type=float, default=0.0002,
@@ -601,6 +617,12 @@ def get_args():
                         help="Save test output")
     parser.add_argument("--resume", action="store_true",
                         help="Resume training")
+    parser.add_argument("--lambda_pixel", type=float,
+                        default=10, help="pixelwise loss weight")
+    parser.add_argument("--lambda_latent", type=float,
+                        default=0.5, help="latent loss weight")
+    parser.add_argument("--lambda_kl", type=float,
+                        default=0.01, help="kullback-leibler loss weight")
     args = parser.parse_args()
     return args
 
@@ -609,7 +631,7 @@ if __name__ == "__main__":
     args = get_args()
 
     trainLoader, testLoader, valLoader = dataLoaders(args)
-    models = get_model()
+    models = get_model(args)
     if args.test:
         test(models, testLoader, args)
     else:

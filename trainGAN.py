@@ -9,7 +9,7 @@ import os
 import open3d as o3d
 import argparse
 import json
-from models import Generator, Discriminator
+from models.cyclegan import Generator, Discriminator
 from tqdm import tqdm
 import time
 from PIL import Image
