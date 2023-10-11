@@ -1,0 +1,11 @@
+# PointNet++
+!git clone https://github.com/erikwijmans/Pointnet2_PyTorch.git
+os.chdir("Pointnet2_PyTorch/pointnet2_ops_lib")
+!python setup.py install --user
+os.chdir("../..")
+# GPU kNN
+!pip install --upgrade https://github.com/unlimblue/KNN_CUDA/releases/download/0.2/KNN_CUDA-0.2-py3-none-any.whl
+
+os.chdir("extensions/chamfer_dist")
+!python setup.py install --user
+os.chdir("../..")
