@@ -16,4 +16,5 @@ stdout.txt
 *.json
 logs/*
 Pointnet2_PyTorch/*
+Pointnet2_PyTorch
 extensions/chamfer_dist/*/*
