@@ -21,7 +21,7 @@ import random
 from tensorboardX import SummaryWriter
 import visdom
 from datasets.diffimagedataset import DiffImageDataset
-from utils import ReplayBuffer, LambdaLR, weights_init_normal
+from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal
 
 
 def make_dir(dir_path):

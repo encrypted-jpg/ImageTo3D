@@ -21,7 +21,7 @@ import random
 from tensorboardX import SummaryWriter
 import visdom
 from datasets.pcndataset import PCNDataset
-from utils import ReplayBuffer, LambdaLR, weights_init_normal, plot_pcd_one_view
+from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal, plot_pcd_one_view
 from extensions.chamfer_dist import ChamferDistanceL1
 
 
