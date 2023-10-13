@@ -143,10 +143,10 @@ def dataLoaders(args):
     return trainLoader, testLoader, valLoader
 
 
-def reparameterization(mu, logvar, Tensor, args):
+def reparameterization(mu, logvar, device, args):
     std = torch.exp(logvar / 2)
-    sampled_z = Variable(Tensor(np.random.normal(
-        0, 1, (mu.size(0), args.latent_dim))))
+    sampled_z = Variable(torch.tensor(
+        np.random.normal(0, 1, (mu.size(0), args.latent_dim)), dtype=torch.float32, device=device))
     z = sampled_z * std + mu
     return z
 
@@ -287,7 +287,7 @@ def train(models, trainLoader, valLoader, args):
 
             # Produce output using encoding of B (cVAE-GAN)
             mu, logvar = encoder(real_B)
-            encoded_z = reparameterization(mu, logvar, Tensor, args)
+            encoded_z = reparameterization(mu, logvar, device, args)
             fake_B = generator(real_A, encoded_z)
 
             # Pixelwise loss of translated image by VAE
@@ -302,8 +302,8 @@ def train(models, trainLoader, valLoader, args):
             # ---------
 
             # Produce output using sampled z (cLR-GAN)
-            sampled_z = Variable(Tensor(np.random.normal(
-                0, 1, (real_A.size(0), args.latent_dim))))
+            sampled_z = Variable(torch.tensor(np.random.normal(
+                0, 1, (real_A.size(0), args.latent_dim)), dtype=torch.float32, device=device))
             _fake_B = generator(real_A, sampled_z)
             # cLR Loss: Adversarial loss
             loss_LR_GAN = D_LR.compute_loss(_fake_B, valid)
@@ -407,7 +407,7 @@ def train(models, trainLoader, valLoader, args):
 
                 # Produce output using encoding of B (cVAE-GAN)
                 mu, logvar = encoder(real_B)
-                encoded_z = reparameterization(mu, logvar, Tensor, args)
+                encoded_z = reparameterization(mu, logvar, device, args)
                 fake_B = generator(real_A, encoded_z)
 
                 # Pixelwise loss of translated image by VAE

@@ -30,7 +30,8 @@ def get_json(filelist, top, count):
         cats[x.split("-")[0]].append("-".join(x.split("-")[1:]))
 
     ckeys = sorted(cats, key=lambda k: len(cats[k]), reverse=True)
-    ckeys.remove("")
+    if "" in ckeys:
+        ckeys.remove("")
 
     jsondict = {}
     for key in ckeys[:top]:
