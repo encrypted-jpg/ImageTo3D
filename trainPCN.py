@@ -20,9 +20,7 @@ import datetime
 import random
 from tensorboardX import SummaryWriter
 import visdom
-from imagedataset import ImageDataset
-from diffimagedataset import DiffImageDataset
-from pcndataset import PCNDataset
+from datasets.pcndataset import PCNDataset
 from utils import ReplayBuffer, LambdaLR, weights_init_normal, plot_pcd_one_view
 from extensions.chamfer_dist import ChamferDistanceL1
 
@@ -132,9 +130,12 @@ def dataLoaders(args):
     valDataset = PCNDataset(
         folder, json, mode='val', b_tag=args.b_tag, img_height=args.size, img_width=args.size)
 
-    trainLoader = DataLoader(trainDataset, batch_size=batch_size, shuffle=True)
-    testLoader = DataLoader(testDataset, batch_size=batch_size, shuffle=False)
-    valLoader = DataLoader(valDataset, batch_size=batch_size, shuffle=False)
+    trainLoader = DataLoader(
+        trainDataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    testLoader = DataLoader(
+        testDataset, batch_size=batch_size, shuffle=False, drop_last=True)
+    valLoader = DataLoader(
+        valDataset, batch_size=batch_size, shuffle=False, drop_last=True)
     return trainLoader, testLoader, valLoader
 
 
@@ -252,7 +253,7 @@ def train(models, trainLoader, valLoader, args):
             optimizer_E.step()
             optimizer_D.step()
 
-            train_loss += loss.item() *  1000
+            train_loss += loss.item() * 1000
             train_step += 1
 
             train_writer.add_scalar('loss', loss.item(), train_step)

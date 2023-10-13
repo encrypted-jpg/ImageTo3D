@@ -20,8 +20,7 @@ import datetime
 import random
 from tensorboardX import SummaryWriter
 import visdom
-from imagedataset import ImageDataset
-from diffimagedataset import DiffImageDataset
+from datasets.diffimagedataset import DiffImageDataset
 from utils import ReplayBuffer, LambdaLR, weights_init_normal
 
 
@@ -137,9 +136,12 @@ def dataLoaders(args):
     valDataset = DiffImageDataset(folder, json, mode='val', transform=transform,
                                   b_tag=args.b_tag, img_height=args.size, img_width=args.size)
 
-    trainLoader = DataLoader(trainDataset, batch_size=batch_size, shuffle=True)
-    testLoader = DataLoader(testDataset, batch_size=batch_size, shuffle=False)
-    valLoader = DataLoader(valDataset, batch_size=batch_size, shuffle=False)
+    trainLoader = DataLoader(
+        trainDataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    testLoader = DataLoader(
+        testDataset, batch_size=batch_size, shuffle=False, drop_last=True)
+    valLoader = DataLoader(
+        valDataset, batch_size=batch_size, shuffle=False, drop_last=True)
     return trainLoader, testLoader, valLoader
 
 
