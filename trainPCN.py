@@ -193,6 +193,10 @@ def train(models, trainLoader, valLoader, args):
     lr_scheduler_E, lr_scheduler_D = get_scheduler(
         optimizer_E, optimizer_D, args)
 
+    train_step = 0
+    minLoss = 1e10
+    minLossEpoch = 0
+    
     if args.resume:
         print_log(log_fd, f"Loading checkpoint from {args.modelPath}")
         checkpoint = torch.load(args.modelPath)
@@ -203,6 +207,7 @@ def train(models, trainLoader, valLoader, args):
         # lr_scheduler_G.load_state_dict(checkpoint['lr_scheduler_G'])
         # lr_scheduler_E.load_state_dict(checkpoint['lr_scheduler_E'])
         args.epoch = checkpoint['epoch'] + 1
+        train_step = checkpoint['epoch'] * len(trainLoader)
         # minLoss = checkpoint['loss']
         # minLossEpoch = args.epoch
         lr_scheduler_E, lr_scheduler_D = get_scheduler(
@@ -210,23 +215,19 @@ def train(models, trainLoader, valLoader, args):
         print_log(
             log_fd, f"Checkpoint loaded (epoch {checkpoint['epoch']}, loss {checkpoint['loss']})")
 
-    # Inputs & targets memory allocation
 
-    Tensor = torch.cuda.FloatTensor if device.type == 'cuda' else torch.Tensor
-
-    train_step = 0
-    minLoss = 1e10
-    minLossEpoch = 0
     ###### Training ######
     for epoch in range(args.epoch, args.n_epochs):
-        if epoch < 10:
+        if epoch < 35:
             x = 0.9
-        elif epoch < 15:
+        elif epoch < 40:
             x = 0.8
-        elif epoch < 20:
+        elif epoch < 45:
             x = 0.7
-        else:
+        elif epoch < 50:
             x = 0.5
+        else:
+            x = 0.05
 
         encoder.train()
         decoder.train()

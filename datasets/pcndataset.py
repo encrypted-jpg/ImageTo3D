@@ -13,6 +13,7 @@ class PCNDataset(data.Dataset):
         self.jsonfile = jsonfile
         self.transform = transforms.Compose(transform)
         self.file_list = []
+        self.cache = {}
         self.img_height = img_height
         self.img_width = img_width
         print(f'[DATASET] Open file {self.jsonfile}')
@@ -30,12 +31,16 @@ class PCNDataset(data.Dataset):
         print(f'[DATASET] {len(self.file_list)} instances were loaded')
 
     def __getitem__(self, idx):
+        if idx in self.cache:
+            return self.cache[idx]
         sample = self.file_list[idx]
         pc = sample['pc']
         pc = IO.get(pc)
         pc2 = np.copy(pc)
         pc = torch.from_numpy(pc)
         pc2 = torch.from_numpy(pc2)
+        self.cache[idx] = (sample['taxonomy_id'],
+                           sample['model_id'], (pc, pc2))
         return sample['taxonomy_id'], sample['model_id'], (pc, pc2)
 
     def __len__(self):

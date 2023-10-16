@@ -13,6 +13,8 @@ class DiffImageDataset(data.Dataset):
         self.jsonfile = jsonfile
         self.transform = transforms.Compose(transform)
         self.file_list = []
+        self.cache = {}
+        self.cache_size = 40000
         self.img_height = img_height
         self.img_width = img_width
         print(f'[DATASET] Open file {self.jsonfile}')
@@ -32,6 +34,8 @@ class DiffImageDataset(data.Dataset):
         print(f'[DATASET] {len(self.file_list)} instances were loaded')
 
     def __getitem__(self, idx):
+        if idx in self.cache:
+            return self.cache[idx]
         sample = self.file_list[idx]
         img1 = sample['img1']
         img2 = sample['img2']
@@ -43,6 +47,9 @@ class DiffImageDataset(data.Dataset):
             (self.img_height, self.img_width))).astype(np.float32) / 255.0
         img1 = torch.from_numpy(img1).permute(2, 0, 1)
         img2 = torch.from_numpy(img2).permute(2, 0, 1)
+        if len(self.cache) < self.cache_size:
+            self.cache[idx] = (sample['taxonomy_id'],
+                               sample['model_id'], (img1, img2))
         return sample['taxonomy_id'], sample['model_id'], (img1, img2)
 
     def __len__(self):
