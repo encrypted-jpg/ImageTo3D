@@ -6,3 +6,4 @@ visdom
 numpy
 matplotlib
 opencv-python
+ninja

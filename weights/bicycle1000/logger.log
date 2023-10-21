@@ -1,0 +1,302 @@
+Experiment: bicycle1000
+Logger directory: logs/bicycle1000
+2023-10-10 17:50:01 ==> Namespace(folder='../ShapeNet', json='final.json', b_tag='depth', log_dir='logs', exp='bicycle1000', batch_size=40, size=256, latent_dim=8, epoch=0, scheduler='lambda', gamma=0.85, n_epochs=30, decay_epoch=10, save_iter=100, lr=0.0002, gpu=0, modelPath='bestModel.pth', test=False, testSave=False, resume=False, lambda_pixel=10, lambda_latent=0.5, lambda_kl=0.01)
+2023-10-10 17:50:03 ==> ------------------Epoch: 0------------------
+2023-10-10 18:16:09 ==> Epoch 0 Train Loss: 2.3721668188770613
+2023-10-10 18:17:10 ==> Epoch 0 Val Loss: 2.723579835891724 Learning Rate: 0.0002
+2023-10-10 18:17:11 ==> Epoch 0 Best Model Saved
+2023-10-10 18:17:11 ==> Last Model saved (best loss 2.7236 at epoch 0)
+2023-10-10 18:17:11 ==> ------------------Epoch: 1------------------
+2023-10-10 18:43:09 ==> Epoch 1 Train Loss: 2.2025063948705794
+2023-10-10 18:44:11 ==> Epoch 1 Val Loss: 3.1352106084426246 Learning Rate: 0.0002
+2023-10-10 18:44:14 ==> Last Model saved (best loss 2.7236 at epoch 0)
+2023-10-10 18:44:14 ==> ------------------Epoch: 2------------------
+2023-10-10 19:10:11 ==> Epoch 2 Train Loss: 2.482015644883116
+2023-10-10 19:11:13 ==> Epoch 2 Val Loss: 2.093113545080026 Learning Rate: 0.0002
+2023-10-10 19:11:16 ==> Epoch 2 Best Model Saved
+2023-10-10 19:11:19 ==> Last Model saved (best loss 2.0931 at epoch 2)
+2023-10-10 19:11:19 ==> ------------------Epoch: 3------------------
+2023-10-10 19:37:13 ==> Epoch 3 Train Loss: 2.6915128755693636
+2023-10-10 19:38:15 ==> Epoch 3 Val Loss: 7.266584833463033 Learning Rate: 0.0002
+2023-10-10 19:38:18 ==> Last Model saved (best loss 2.0931 at epoch 2)
+2023-10-10 19:38:18 ==> ------------------Epoch: 4------------------
+2023-10-10 20:04:16 ==> Epoch 4 Train Loss: 2.724620664678514
+2023-10-10 20:05:18 ==> Epoch 4 Val Loss: 5.02695851723353 Learning Rate: 0.0002
+2023-10-10 20:05:22 ==> Last Model saved (best loss 2.0931 at epoch 2)
+2023-10-10 20:05:22 ==> ------------------Epoch: 5------------------
+2023-10-10 20:31:15 ==> Epoch 5 Train Loss: 2.7442308835064373
+2023-10-10 20:32:17 ==> Epoch 5 Val Loss: 1.8117968395352364 Learning Rate: 0.0002
+2023-10-10 20:32:20 ==> Epoch 5 Best Model Saved
+2023-10-10 20:32:24 ==> Last Model saved (best loss 1.8118 at epoch 5)
+2023-10-10 20:32:24 ==> ------------------Epoch: 6------------------
+2023-10-10 20:58:18 ==> Epoch 6 Train Loss: 2.724362034847339
+2023-10-10 20:59:20 ==> Epoch 6 Val Loss: 14.926854741573333 Learning Rate: 0.0002
+2023-10-10 20:59:23 ==> Last Model saved (best loss 1.8118 at epoch 5)
+2023-10-10 20:59:23 ==> ------------------Epoch: 7------------------
+2023-10-10 21:25:15 ==> Epoch 7 Train Loss: 2.6991532263035576
+2023-10-10 21:26:18 ==> Epoch 7 Val Loss: 1.5398223181565602 Learning Rate: 0.0002
+2023-10-10 21:26:21 ==> Epoch 7 Best Model Saved
+2023-10-10 21:26:24 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-10 21:26:24 ==> ------------------Epoch: 8------------------
+2023-10-10 21:52:17 ==> Epoch 8 Train Loss: 2.6801351942742864
+2023-10-10 21:53:19 ==> Epoch 8 Val Loss: 4.946623162428538 Learning Rate: 0.0002
+2023-10-10 21:53:22 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-10 21:53:22 ==> ------------------Epoch: 9------------------
+2023-10-10 22:19:16 ==> Epoch 9 Train Loss: 2.6756704725325107
+2023-10-10 22:20:18 ==> Epoch 9 Val Loss: 14.839342093467712 Learning Rate: 0.0002
+2023-10-10 22:20:22 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-10 22:20:22 ==> ------------------Epoch: 10------------------
+2023-10-10 22:46:13 ==> Epoch 10 Train Loss: 2.6681414478768906
+2023-10-10 22:47:14 ==> Epoch 10 Val Loss: 27.85488265355428 Learning Rate: 0.00019
+2023-10-10 22:47:18 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-10 22:47:18 ==> ------------------Epoch: 11------------------
+2023-10-10 23:13:20 ==> Epoch 11 Train Loss: 2.658148115562896
+2023-10-10 23:14:23 ==> Epoch 11 Val Loss: 4.051921694477399 Learning Rate: 0.00018
+2023-10-10 23:14:27 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-10 23:14:28 ==> ------------------Epoch: 12------------------
+2023-10-10 23:40:16 ==> Epoch 12 Train Loss: 2.654010683049758
+2023-10-10 23:41:18 ==> Epoch 12 Val Loss: 19.89057155450185 Learning Rate: 0.00017
+2023-10-10 23:41:21 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-10 23:41:21 ==> ------------------Epoch: 13------------------
+2023-10-11 00:07:11 ==> Epoch 13 Train Loss: 2.6707521366576352
+2023-10-11 00:08:12 ==> Epoch 13 Val Loss: 11.715863462289175 Learning Rate: 0.00016
+2023-10-11 00:08:16 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 00:08:16 ==> ------------------Epoch: 14------------------
+2023-10-11 00:34:02 ==> Epoch 14 Train Loss: 2.7018949246034025
+2023-10-11 00:35:03 ==> Epoch 14 Val Loss: 2.1197211727499963 Learning Rate: 0.00015000000000000001
+2023-10-11 00:35:07 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 00:35:07 ==> ------------------Epoch: 15------------------
+2023-10-11 01:00:54 ==> Epoch 15 Train Loss: 2.6742711532860994
+2023-10-11 01:01:55 ==> Epoch 15 Val Loss: 2.4475624740123747 Learning Rate: 0.00014
+2023-10-11 01:01:59 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 01:01:59 ==> ------------------Epoch: 16------------------
+2023-10-11 01:28:05 ==> Epoch 16 Train Loss: 2.6965052160744865
+2023-10-11 01:29:07 ==> Epoch 16 Val Loss: 2.3498977720737457 Learning Rate: 0.00013000000000000002
+2023-10-11 01:29:11 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 01:29:11 ==> ------------------Epoch: 17------------------
+2023-10-11 01:54:56 ==> Epoch 17 Train Loss: 2.718585293988387
+2023-10-11 01:55:58 ==> Epoch 17 Val Loss: 6.911965084075928 Learning Rate: 0.00012
+2023-10-11 01:56:01 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 01:56:01 ==> ------------------Epoch: 18------------------
+2023-10-11 02:21:44 ==> Epoch 18 Train Loss: 2.7069574242457746
+2023-10-11 02:22:45 ==> Epoch 18 Val Loss: 2.5363020559151965 Learning Rate: 0.00011000000000000002
+2023-10-11 02:22:48 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 02:22:48 ==> ------------------Epoch: 19------------------
+2023-10-11 02:48:33 ==> Epoch 19 Train Loss: 2.7963018426050743
+2023-10-11 02:49:34 ==> Epoch 19 Val Loss: 2.229242390394211 Learning Rate: 0.0001
+2023-10-11 02:49:37 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 02:49:37 ==> ------------------Epoch: 20------------------
+2023-10-11 03:15:16 ==> Epoch 20 Train Loss: 2.8442134856556853
+2023-10-11 03:16:18 ==> Epoch 20 Val Loss: 9.83025060693423 Learning Rate: 8.999999999999999e-05
+2023-10-11 03:16:21 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 03:16:21 ==> ------------------Epoch: 21------------------
+2023-10-11 03:42:00 ==> Epoch 21 Train Loss: 2.84366632749637
+2023-10-11 03:43:01 ==> Epoch 21 Val Loss: 4.359854280948639 Learning Rate: 8e-05
+2023-10-11 03:43:05 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 03:43:05 ==> ------------------Epoch: 22------------------
+2023-10-11 04:08:44 ==> Epoch 22 Train Loss: 2.884297212337454
+2023-10-11 04:09:45 ==> Epoch 22 Val Loss: 2.075476045409838 Learning Rate: 7e-05
+2023-10-11 04:09:48 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 04:09:48 ==> ------------------Epoch: 23------------------
+2023-10-11 04:35:27 ==> Epoch 23 Train Loss: 2.8710051445290445
+2023-10-11 04:36:28 ==> Epoch 23 Val Loss: 1.9647953207294147 Learning Rate: 6.0000000000000015e-05
+2023-10-11 04:36:32 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 04:36:32 ==> ------------------Epoch: 24------------------
+2023-10-11 05:02:14 ==> Epoch 24 Train Loss: 2.913562595906357
+2023-10-11 05:03:15 ==> Epoch 24 Val Loss: 2.616114826997121 Learning Rate: 5e-05
+2023-10-11 05:03:19 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 05:03:19 ==> ------------------Epoch: 25------------------
+2023-10-11 05:28:59 ==> Epoch 25 Train Loss: 2.9052404114355643
+2023-10-11 05:30:01 ==> Epoch 25 Val Loss: 2.039621804157893 Learning Rate: 3.999999999999999e-05
+2023-10-11 05:30:06 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 05:30:06 ==> ------------------Epoch: 26------------------
+2023-10-11 05:55:48 ==> Epoch 26 Train Loss: 2.9303522910922766
+2023-10-11 05:56:49 ==> Epoch 26 Val Loss: 2.5561639328797656 Learning Rate: 3.0000000000000008e-05
+2023-10-11 05:56:53 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 05:56:53 ==> ------------------Epoch: 27------------------
+2023-10-11 06:22:33 ==> Epoch 27 Train Loss: 2.9508075916518766
+2023-10-11 06:23:34 ==> Epoch 27 Val Loss: 3.0769114007552463 Learning Rate: 1.9999999999999995e-05
+2023-10-11 06:23:38 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 06:23:38 ==> ------------------Epoch: 28------------------
+2023-10-11 06:49:16 ==> Epoch 28 Train Loss: 2.9752108766386907
+2023-10-11 06:50:17 ==> Epoch 28 Val Loss: 2.4147351354360582 Learning Rate: 1.000000000000001e-05
+2023-10-11 06:50:20 ==> Last Model saved (best loss 1.5398 at epoch 7)
+2023-10-11 06:50:20 ==> ------------------Epoch: 29------------------
+2023-10-11 07:15:58 ==> Epoch 29 Train Loss: 2.98817403751115
+2023-10-11 07:16:59 ==> Epoch 29 Val Loss: 2.439360734820366 Learning Rate: 0.0
+2023-10-11 07:17:02 ==> Last Model saved (best loss 1.5398 at epoch 7)
+Experiment: bicycle1000
+Logger directory: logs/bicycle1000
+2023-10-12 20:12:29 ==> Namespace(folder='../ShapeNet', json='final.json', b_tag='depth', log_dir='logs', exp='bicycle1000', batch_size=40, size=256, latent_dim=8, epoch=0, scheduler='step', gamma=0.6, n_epochs=10, decay_epoch=10, save_iter=20, lr=1e-05, gpu=0, modelPath='logs/bicycle1000/bestModel.pth', test=False, testSave=False, resume=True, lambda_pixel=10, lambda_latent=0.5, lambda_kl=0.01)
+2023-10-12 20:12:30 ==> Loading checkpoint from logs/bicycle1000/bestModel.pth
+2023-10-12 20:12:30 ==> Checkpoint loaded (epoch 7, loss 1.5398223181565602)
+2023-10-12 20:12:30 ==> ------------------Epoch: 8------------------
+2023-10-12 20:39:36 ==> Epoch 8 Train Loss: 2.7209997874995073
+2023-10-12 20:40:39 ==> Epoch 8 Val Loss: 2.085855868458748 Learning Rate: 6e-06
+2023-10-12 20:40:44 ==> Epoch 8 Best Model Saved
+2023-10-12 20:40:48 ==> Last Model saved (best loss 2.0859 at epoch 8)
+2023-10-12 20:40:48 ==> ------------------Epoch: 9------------------
+2023-10-12 21:07:30 ==> Epoch 9 Train Loss: 2.760872995480895
+2023-10-12 21:08:32 ==> Epoch 9 Val Loss: 2.1914869333306948 Learning Rate: 3.6e-06
+2023-10-12 21:08:36 ==> Last Model saved (best loss 2.0859 at epoch 8)
+Experiment: bicycle1000
+Logger directory: logs/bicycle1000
+2023-10-13 22:29:29 ==> Namespace(b_tag='depth', batch_size=40, decay_epoch=10, epoch=0, exp='bicycle1000', folder='../ShapeNet', gamma=0.7, gpu=0, json='final.json', lambda_kl=0.01, lambda_latent=0.5, lambda_pixel=10, latent_dim=8, log_dir='logs', lr=1e-05, modelPath='logs/bicycle1000/bestModel.pth', n_epochs=15, resume=True, save_iter=20, scheduler='step', size=256, test=False, testSave=False)
+2023-10-13 22:29:33 ==> Loading checkpoint from logs/bicycle1000/bestModel.pth
+2023-10-13 22:29:33 ==> Checkpoint loaded (epoch 7, loss 1.5398223181565602)
+2023-10-13 22:29:33 ==> ------------------Epoch: 8------------------
+2023-10-13 22:59:40 ==> Epoch 8 Train Loss: 2.720463564246893
+2023-10-13 23:00:46 ==> Epoch 8 Val Loss: 1.9066374475757282 Learning Rate: 7e-06
+2023-10-13 23:00:50 ==> Epoch 8 Best Model Saved
+2023-10-13 23:00:50 ==> Last Model saved (best loss 1.9066 at epoch 8)
+2023-10-13 23:00:50 ==> ------------------Epoch: 9------------------
+2023-10-13 23:30:59 ==> Epoch 9 Train Loss: 2.76756460989515
+2023-10-13 23:32:02 ==> Epoch 9 Val Loss: 2.055187873542309 Learning Rate: 4.9e-06
+2023-10-13 23:32:05 ==> Last Model saved (best loss 1.9066 at epoch 8)
+2023-10-13 23:32:05 ==> ------------------Epoch: 10------------------Experiment: bicycle1000
+Logger directory: logs/bicycle1000
+2023-10-15 02:17:55 ==> Namespace(b_tag='depth', batch_size=40, decay_epoch=10, epoch=0, exp='bicycle1000', folder='../ShapeNet', gamma=0.85, gpu=0, json='final.json', lambda_kl=0.01, lambda_latent=0.5, lambda_pixel=10, latent_dim=8, log_dir='logs', lr=1e-05, modelPath='logs/bicycle1000/bestModel.pth', n_epochs=50, resume=True, save_iter=20, scheduler='step', size=256, test=False, testSave=False)
+2023-10-15 02:17:59 ==> Loading checkpoint from logs/bicycle1000/bestModel.pth
+2023-10-15 02:17:59 ==> Checkpoint loaded (epoch 8, loss 1.9066374475757282)
+2023-10-15 02:17:59 ==> ------------------Epoch: 9------------------
+2023-10-15 03:28:32 ==> Epoch 9 Train Loss: 2.7669696379452944
+2023-10-15 03:29:44 ==> Epoch 9 Val Loss: 1.7571636165181796 Learning Rate: 8.5e-06
+2023-10-15 03:29:47 ==> Epoch 9 Best Model Saved
+2023-10-15 03:29:51 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 03:29:51 ==> ------------------Epoch: 10------------------
+2023-10-15 04:02:21 ==> Epoch 10 Train Loss: 2.778014374648531
+2023-10-15 04:04:32 ==> Epoch 10 Val Loss: 2.2845059126615523 Learning Rate: 7.2249999999999994e-06
+2023-10-15 04:04:41 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 04:04:41 ==> ------------------Epoch: 11------------------
+2023-10-15 04:41:15 ==> Epoch 11 Train Loss: 2.7940796377758184
+2023-10-15 04:41:51 ==> Epoch 11 Val Loss: 2.1601043924689294 Learning Rate: 6.141249999999999e-06
+2023-10-15 04:41:56 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 04:41:56 ==> ------------------Epoch: 12------------------
+2023-10-15 05:16:48 ==> Epoch 12 Train Loss: 2.8313829952230054
+2023-10-15 05:17:23 ==> Epoch 12 Val Loss: 2.241890601813793 Learning Rate: 5.220062499999999e-06
+2023-10-15 05:17:30 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 05:17:30 ==> ------------------Epoch: 13------------------
+2023-10-15 05:53:13 ==> Epoch 13 Train Loss: 2.8619504887610674
+2023-10-15 05:53:47 ==> Epoch 13 Val Loss: 2.4399604856967927 Learning Rate: 4.4370531249999995e-06
+2023-10-15 05:53:53 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 05:53:53 ==> ------------------Epoch: 14------------------
+2023-10-15 06:29:23 ==> Epoch 14 Train Loss: 2.8771373787894845
+2023-10-15 06:32:29 ==> Epoch 14 Val Loss: 2.49522995253404 Learning Rate: 3.7714951562499997e-06
+2023-10-15 06:32:36 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 06:32:36 ==> ------------------Epoch: 15------------------
+2023-10-15 07:09:00 ==> Epoch 15 Train Loss: 2.8893137998878955
+2023-10-15 07:09:39 ==> Epoch 15 Val Loss: 2.0476907496651013 Learning Rate: 3.2057708828124997e-06
+2023-10-15 07:09:46 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 07:09:46 ==> ------------------Epoch: 16------------------
+2023-10-15 07:46:21 ==> Epoch 16 Train Loss: 2.88846083941559
+2023-10-15 07:46:57 ==> Epoch 16 Val Loss: 2.6008190393447874 Learning Rate: 2.7249052503906246e-06
+2023-10-15 07:47:02 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 07:47:02 ==> ------------------Epoch: 17------------------
+2023-10-15 08:23:17 ==> Epoch 17 Train Loss: 2.906123197078705
+2023-10-15 08:23:53 ==> Epoch 17 Val Loss: 2.3784283886353177 Learning Rate: 2.316169462832031e-06
+2023-10-15 08:23:58 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 08:23:58 ==> ------------------Epoch: 18------------------
+2023-10-15 09:00:31 ==> Epoch 18 Train Loss: 2.9078990784163277
+2023-10-15 09:01:06 ==> Epoch 18 Val Loss: 2.5230254302422206 Learning Rate: 1.9687440434072264e-06
+2023-10-15 09:01:09 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 09:01:09 ==> ------------------Epoch: 19------------------
+2023-10-15 09:37:27 ==> Epoch 19 Train Loss: 2.9047797832638027
+2023-10-15 09:41:27 ==> Epoch 19 Val Loss: 2.5957160780827206 Learning Rate: 1.6734324368961425e-06
+2023-10-15 09:41:31 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 09:41:31 ==> ------------------Epoch: 20------------------
+2023-10-15 10:25:01 ==> Epoch 20 Train Loss: 2.8999090382208426
+2023-10-15 10:26:32 ==> Epoch 20 Val Loss: 2.40273730357488 Learning Rate: 1.422417571361721e-06
+2023-10-15 10:26:36 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 10:26:36 ==> ------------------Epoch: 21------------------
+2023-10-15 11:03:04 ==> Epoch 21 Train Loss: 2.910994025381903
+2023-10-15 11:03:38 ==> Epoch 21 Val Loss: 2.909330122669538 Learning Rate: 1.2090549356574628e-06
+2023-10-15 11:03:42 ==> Last Model saved (best loss 1.7572 at epoch 9)
+2023-10-15 11:03:42 ==> ------------------Epoch: 22------------------
+Experiment: bicycle1000
+Logger directory: logs/bicycle1000
+2023-10-15 11:51:46 ==> Namespace(b_tag='depth', batch_size=40, decay_epoch=10, epoch=0, exp='bicycle1000', folder='../ShapeNet', gamma=0.95, gpu=0, json='final.json', lambda_kl=0.01, lambda_latent=0.5, lambda_pixel=10, latent_dim=8, log_dir='logs', lr=5e-06, modelPath='logs/bicycle1000/bestModel.pth', n_epochs=30, resume=True, save_iter=1000, scheduler='step', size=256, test=False, testSave=False)
+2023-10-15 11:51:49 ==> Loading checkpoint from logs/bicycle1000/bestModel.pth
+2023-10-15 11:51:49 ==> Checkpoint loaded (epoch 9, loss 1.7571636165181796)
+2023-10-15 11:51:49 ==> ------------------Epoch: 10------------------
+2023-10-15 12:59:19 ==> Epoch 10 Train Loss: 2.7836878097305697
+2023-10-15 13:00:27 ==> Epoch 10 Val Loss: 2.236754282315572 Learning Rate: 4.75e-06
+2023-10-15 13:00:28 ==> Epoch 10 Best Model Saved
+2023-10-15 13:00:31 ==> Last Model saved (best loss 2.2368 at epoch 10)
+2023-10-15 13:00:31 ==> ------------------Epoch: 11------------------
+2023-10-15 13:28:01 ==> Epoch 11 Train Loss: 2.777739319143196
+2023-10-15 13:28:34 ==> Epoch 11 Val Loss: 2.339933243393898 Learning Rate: 4.5125e-06
+2023-10-15 13:28:38 ==> Last Model saved (best loss 2.2368 at epoch 10)
+2023-10-15 13:28:38 ==> ------------------Epoch: 12------------------
+2023-10-15 13:56:09 ==> Epoch 12 Train Loss: 2.800937141974767
+2023-10-15 13:56:42 ==> Epoch 12 Val Loss: 2.3010675996541976 Learning Rate: 4.286875e-06
+2023-10-15 13:56:45 ==> Last Model saved (best loss 2.2368 at epoch 10)
+2023-10-15 13:56:45 ==> ------------------Epoch: 13------------------
+2023-10-15 14:24:16 ==> Epoch 13 Train Loss: 2.818278128777941
+2023-10-15 14:24:49 ==> Epoch 13 Val Loss: 2.3339845558007557 Learning Rate: 4.07253125e-06
+2023-10-15 14:24:52 ==> Last Model saved (best loss 2.2368 at epoch 10)
+2023-10-15 14:24:52 ==> ------------------Epoch: 14------------------
+2023-10-15 15:00:34 ==> Epoch 14 Train Loss: 2.840586569408576
+2023-10-15 15:01:07 ==> Epoch 14 Val Loss: 2.0849352166056634 Learning Rate: 3.8689046875e-06
+2023-10-15 15:01:11 ==> Epoch 14 Best Model Saved
+2023-10-15 15:01:14 ==> Last Model saved (best loss 2.0849 at epoch 14)
+2023-10-15 15:01:14 ==> ------------------Epoch: 15------------------
+2023-10-15 15:28:49 ==> Epoch 15 Train Loss: 2.8625343054533006
+2023-10-15 15:29:22 ==> Epoch 15 Val Loss: 2.2230354805787402 Learning Rate: 3.675459453125e-06
+2023-10-15 15:29:25 ==> Last Model saved (best loss 2.0849 at epoch 14)
+2023-10-15 15:29:25 ==> ------------------Epoch: 16------------------
+2023-10-15 15:56:51 ==> Epoch 16 Train Loss: 2.8734833557158708
+2023-10-15 15:57:24 ==> Epoch 16 Val Loss: 2.3198495994011563 Learning Rate: 3.4916864804687498e-06
+2023-10-15 15:57:28 ==> Last Model saved (best loss 2.0849 at epoch 14)
+2023-10-15 15:57:28 ==> ------------------Epoch: 17------------------
+2023-10-15 16:24:54 ==> Epoch 17 Train Loss: 2.882462545235952
+2023-10-15 16:25:27 ==> Epoch 17 Val Loss: 2.4467218110958737 Learning Rate: 3.317102156445312e-06
+2023-10-15 16:25:30 ==> Last Model saved (best loss 2.0849 at epoch 14)
+2023-10-15 16:25:30 ==> ------------------Epoch: 18------------------
+2023-10-15 16:52:58 ==> Epoch 18 Train Loss: 2.8912921667099
+2023-10-15 16:53:31 ==> Epoch 18 Val Loss: 2.3253908564647037 Learning Rate: 3.1512470486230465e-06
+2023-10-15 16:53:34 ==> Last Model saved (best loss 2.0849 at epoch 14)
+2023-10-15 16:53:34 ==> ------------------Epoch: 19------------------
+2023-10-15 17:21:02 ==> Epoch 19 Train Loss: 2.8990317131082217
+2023-10-15 17:21:35 ==> Epoch 19 Val Loss: 2.5165217985709507 Learning Rate: 2.9936846961918942e-06
+2023-10-15 17:21:38 ==> Last Model saved (best loss 2.0849 at epoch 14)
+2023-10-15 17:21:38 ==> ------------------Epoch: 20------------------
+2023-10-15 17:49:04 ==> Epoch 20 Train Loss: 2.9024725979194046
+2023-10-15 17:49:37 ==> Epoch 20 Val Loss: 2.0792465368906656 Learning Rate: 2.8440004613822995e-06
+2023-10-15 17:49:41 ==> Epoch 20 Best Model Saved
+2023-10-15 17:49:44 ==> Last Model saved (best loss 2.0792 at epoch 20)
+2023-10-15 17:49:44 ==> ------------------Epoch: 21------------------
+2023-10-15 18:17:12 ==> Epoch 21 Train Loss: 2.90497685285906
+2023-10-15 18:17:45 ==> Epoch 21 Val Loss: 2.372125353415807 Learning Rate: 2.7018004383131843e-06
+2023-10-15 18:17:48 ==> Last Model saved (best loss 2.0792 at epoch 20)
+2023-10-15 18:17:48 ==> ------------------Epoch: 22------------------
+2023-10-15 18:45:18 ==> Epoch 22 Train Loss: 2.9099694193651278
+2023-10-15 18:45:51 ==> Epoch 22 Val Loss: 2.218159686028957 Learning Rate: 2.566710416397525e-06
+2023-10-15 18:45:54 ==> Last Model saved (best loss 2.0792 at epoch 20)
+2023-10-15 18:45:54 ==> ------------------Epoch: 23------------------
+2023-10-15 19:13:22 ==> Epoch 23 Train Loss: 2.9064486394325892
+2023-10-15 19:13:55 ==> Epoch 23 Val Loss: 2.539420180519422 Learning Rate: 2.4383748955776484e-06
+2023-10-15 19:13:59 ==> Last Model saved (best loss 2.0792 at epoch 20)
+2023-10-15 19:13:59 ==> ------------------Epoch: 24------------------
+2023-10-15 19:41:28 ==> Epoch 24 Train Loss: 2.90465505681932
+2023-10-15 19:42:01 ==> Epoch 24 Val Loss: 2.663541319966316 Learning Rate: 2.3164561507987658e-06
+2023-10-15 19:42:04 ==> Last Model saved (best loss 2.0792 at epoch 20)
+2023-10-15 19:42:04 ==> ------------------Epoch: 25------------------
+2023-10-15 20:09:31 ==> Epoch 25 Train Loss: 2.904667258510987
+2023-10-15 20:10:04 ==> Epoch 25 Val Loss: 2.7116645594437916 Learning Rate: 2.2006333432588275e-06
+2023-10-15 20:10:07 ==> Last Model saved (best loss 2.0792 at epoch 20)
+2023-10-15 20:10:07 ==> ------------------Epoch: 26------------------
+2023-10-15 20:37:38 ==> Epoch 26 Train Loss: 2.9133202277123926
+2023-10-15 20:38:11 ==> Epoch 26 Val Loss: 2.5711981346209845 Learning Rate: 2.090601676095886e-06
+2023-10-15 20:38:14 ==> Last Model saved (best loss 2.0792 at epoch 20)
+2023-10-15 20:38:14 ==> ------------------Epoch: 27------------------
+2023-10-15 21:14:20 ==> Epoch 27 Train Loss: 2.9043334761013586
+2023-10-15 21:14:53 ==> Epoch 27 Val Loss: 2.718757422765096 Learning Rate: 1.9860715922910916e-06
+2023-10-15 21:14:56 ==> Last Model saved (best loss 2.0792 at epoch 20)
+2023-10-15 21:14:56 ==> ------------------Epoch: 28------------------
+2023-10-15 21:48:51 ==> Epoch 28 Train Loss: 2.9067323540647823
+2023-10-15 21:49:24 ==> Epoch 28 Val Loss: 2.2496649449070296 Learning Rate: 1.886768012676537e-06
+2023-10-15 21:49:28 ==> Last Model saved (best loss 2.0792 at epoch 20)
+2023-10-15 21:49:28 ==> ------------------Epoch: 29------------------
+2023-10-15 22:16:59 ==> Epoch 29 Train Loss: 2.9002615811303256
+2023-10-15 22:17:32 ==> Epoch 29 Val Loss: 2.229473709066709 Learning Rate: 1.79242961204271e-06
+2023-10-15 22:17:36 ==> Last Model saved (best loss 2.0792 at epoch 20)

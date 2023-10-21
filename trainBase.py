@@ -153,9 +153,9 @@ def get_model(args):
     encoder = PCNEncoder(latent_dim=1024)
     decoder = PCNDecoder(latent_dim=1024, num_dense=16384)
     print(
-        f"Image Encoder Parameters: {round(count_parameters(img_encoder), 4) / 1e6}")
-    print(f"Encoder Parameters: {round(count_parameters(encoder), 4) / 1e6}")
-    print(f"Decoder Parameters: {round(count_parameters(decoder), 4) / 1e6}")
+        f"Image Encoder Parameters: {round(count_parameters(img_encoder)/ 1e6, 4)}")
+    print(f"Encoder Parameters: {round(count_parameters(encoder)/ 1e6, 4)}")
+    print(f"Decoder Parameters: {round(count_parameters(decoder)/ 1e6, 4)}")
     return img_encoder, encoder, decoder
 
 
