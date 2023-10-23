@@ -20,7 +20,7 @@ import datetime
 import random
 from tensorboardX import SummaryWriter
 import visdom
-from datasets.diffimagedataset import DiffImageDataset
+from datasets import DiffImageDataset
 from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal
 
 

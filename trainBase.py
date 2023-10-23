@@ -21,7 +21,7 @@ import datetime
 import random
 from tensorboardX import SummaryWriter
 import visdom
-from datasets.pcnimagedataset import PCNImageDataset
+from datasets import PCNImageDataset
 from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal, plot_pcd_one_view
 from extensions.chamfer_dist import ChamferDistanceL1
 

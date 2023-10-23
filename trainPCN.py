@@ -20,7 +20,7 @@ import datetime
 import random
 from tensorboardX import SummaryWriter
 import visdom
-from datasets.pcndataset import PCNDataset
+from datasets import PCNDataset
 from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal, plot_pcd_one_view
 from extensions.chamfer_dist import ChamferDistanceL1
 
@@ -196,7 +196,7 @@ def train(models, trainLoader, valLoader, args):
     train_step = 0
     minLoss = 1e10
     minLossEpoch = 0
-    
+
     if args.resume:
         print_log(log_fd, f"Loading checkpoint from {args.modelPath}")
         checkpoint = torch.load(args.modelPath)
@@ -214,7 +214,6 @@ def train(models, trainLoader, valLoader, args):
             optimizer_E, optimizer_D, args)
         print_log(
             log_fd, f"Checkpoint loaded (epoch {checkpoint['epoch']}, loss {checkpoint['loss']})")
-
 
     ###### Training ######
     for epoch in range(args.epoch, args.n_epochs):
