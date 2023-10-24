@@ -316,8 +316,8 @@ def train(models, trainLoader, valLoader, args):
                 'epoch': epoch,
                 'loss': val_loss,
                 'img_encoder': img_encoder.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'lr_scheduler': lr_scheduler.state_dict(),
+                # 'optimizer': optimizer.state_dict(),
+                # 'lr_scheduler': lr_scheduler.state_dict(),
             }, bestSavePath)
             print_log(log_fd, f"Epoch {epoch} Best Model Saved")
 
@@ -325,8 +325,8 @@ def train(models, trainLoader, valLoader, args):
             'epoch': epoch,
             'loss': val_loss,
             'img_encoder': img_encoder.state_dict(),
-            'optimizer': optimizer.state_dict(),
-            'lr_scheduler': lr_scheduler.state_dict(),
+            # 'optimizer': optimizer.state_dict(),
+            # 'lr_scheduler': lr_scheduler.state_dict(),
         }, lastSavePath)
 
         print_log(log_fd, "Last Model saved (best loss {:.4f} at epoch {})" .format(
