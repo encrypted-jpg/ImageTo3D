@@ -3,7 +3,6 @@ from torch.autograd import Variable
 import torch
 import open3d as o3d
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 
 def o3d_visualize_pc(pc):

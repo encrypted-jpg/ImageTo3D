@@ -6,6 +6,7 @@ import numpy as np
 from fileio import IO
 import torchvision.transforms as transforms
 from functools import lru_cache
+from ..utils.constants import CACHE_SIZE
 
 
 class PCNImageDataset(data.Dataset):
@@ -33,7 +34,7 @@ class PCNImageDataset(data.Dataset):
                     })
         print(f'[DATASET] {len(self.file_list)} instances were loaded')
 
-    @lru_cache(maxsize=10000)
+    @lru_cache(maxsize=CACHE_SIZE)
     def get_pc(self, idx):
         sample = self.file_list[idx]
         pc = sample['pc']
@@ -41,7 +42,7 @@ class PCNImageDataset(data.Dataset):
         pc = torch.from_numpy(pc)
         return pc
 
-    @lru_cache(maxsize=10000)
+    @lru_cache(maxsize=CACHE_SIZE)
     def get_img(self, idx):
         sample = self.file_list[idx]
         img = sample['img']
