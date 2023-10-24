@@ -256,6 +256,7 @@ def train(models, trainLoader, valLoader, args):
             mse_loss = MSE(base_rep, rep) * args.lambda_latent
             loss = chamfer_loss + mse_loss
             loss.backward()
+            optimizer.step()
 
             train_loss += chamfer_loss.item() * 1000
             train_step += 1
@@ -300,7 +301,6 @@ def train(models, trainLoader, valLoader, args):
                 chamfer_loss = loss1 * 0.5 + loss2 * 0.5
                 mse_loss = MSE(base_rep, rep) * args.lambda_latent
                 loss = chamfer_loss + mse_loss
-                loss.backward()
 
                 val_writer.add_scalar('loss', loss.item(), i)
                 val_loss += loss.item() * 1000

@@ -6,5 +6,5 @@ if len(sys.argv) < 2:
 
 value = int(sys.argv[1])
 
-with open("utils/constants.py", "w") as f:
+with open("datasets/constants.py", "w") as f:
     f.write("CACHE_SIZE = {}\n".format(value))

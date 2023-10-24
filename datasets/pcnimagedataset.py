@@ -6,7 +6,7 @@ import numpy as np
 from fileio import IO
 import torchvision.transforms as transforms
 from functools import lru_cache
-from ..utils.constants import CACHE_SIZE
+from .constants import CACHE_SIZE
 
 
 class PCNImageDataset(data.Dataset):
