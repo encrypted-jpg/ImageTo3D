@@ -11,6 +11,48 @@ def o3d_visualize_pc(pc):
     o3d.visualization.draw_geometries([point_cloud])
 
 
+def plot_image_output_gt(filename, image, output_pcd, gt_pcd, img_title='Image', output_title='Output PCD', gt_title='Ground Truth PCD', suptitle='', pcd_size=0.5, cmap='Reds', zdir='y',
+                         xlim=(-0.5, 0.5), ylim=(-0.5, 0.5), zlim=(-0.5, 0.5)):
+    fig = plt.figure(figsize=(9, 3 * 1.4))
+    elev = 30
+    azim = -45
+
+    # Plot the image
+    ax_img = fig.add_subplot(1, 3, 1)
+    ax_img.imshow(image)
+    ax_img.set_title(img_title)
+
+    # Plot the output point cloud
+    color_output = output_pcd[:, 0]
+    ax_output = fig.add_subplot(1, 3, 2, projection='3d')
+    ax_output.view_init(elev, azim)
+    ax_output.scatter(output_pcd[:, 0], output_pcd[:, 1], output_pcd[:, 2], zdir=zdir,
+                      c=color_output, s=pcd_size, cmap=cmap, vmin=-1.0, vmax=0.5)
+    ax_output.set_title(output_title)
+    ax_output.set_axis_off()
+    ax_output.set_xlim(xlim)
+    ax_output.set_ylim(ylim)
+    ax_output.set_zlim(zlim)
+
+    # Plot the ground truth point cloud
+    color_gt = gt_pcd[:, 0]
+    ax_gt = fig.add_subplot(1, 3, 3, projection='3d')
+    ax_gt.view_init(elev, azim)
+    ax_gt.scatter(gt_pcd[:, 0], gt_pcd[:, 1], gt_pcd[:, 2], zdir=zdir,
+                  c=color_gt, s=pcd_size, cmap=cmap, vmin=-1.0, vmax=0.5)
+    ax_gt.set_title(gt_title)
+    ax_gt.set_axis_off()
+    ax_gt.set_xlim(xlim)
+    ax_gt.set_ylim(ylim)
+    ax_gt.set_zlim(zlim)
+
+    plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05,
+                        top=0.9, wspace=0.1, hspace=0.1)
+    plt.suptitle(suptitle)
+    fig.savefig(filename)
+    plt.close(fig)
+
+
 def plot_pcd_one_view(filename, pcds, titles, suptitle='', sizes=None, cmap='Reds', zdir='y',
                       xlim=(-0.5, 0.5), ylim=(-0.5, 0.5), zlim=(-0.5, 0.5)):
     if sizes is None:

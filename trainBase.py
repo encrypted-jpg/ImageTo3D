@@ -22,7 +22,7 @@ import random
 from tensorboardX import SummaryWriter
 import visdom
 from datasets import PCNImageDataset
-from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal, plot_pcd_one_view
+from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal, plot_pcd_one_view, plot_image_output_gt
 from extensions.chamfer_dist import ChamferDistanceL1
 
 
@@ -266,10 +266,12 @@ def train(models, trainLoader, valLoader, args):
 
             if train_step % args.save_iter == 0:
                 index = random.randint(0, inp.shape[0] - 1)
-                plot_pcd_one_view(os.path.join(exp_path, f'train_{train_step}.png'),
-                                  [inp[index].detach().cpu().numpy(), coarse[index].detach().cpu().numpy(
-                                  ), fine[index].detach().cpu().numpy(), gt[index].detach().cpu().numpy()],
-                                  ['Input', 'Coarse', 'Dense', 'Ground Truth'], xlim=(-0.5, 1), ylim=(-0.5, 1), zlim=(-0.5, 1))
+                plot_image_output_gt(os.path.join(exp_path, f'test_{train_step}.png'), A[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), fine[index].detach().cpu().numpy(), gt[index].detach(
+                ).cpu().numpy(), img_title='Input Image', output_title='Dense Output PCD', gt_title='Ground Truth PCD', suptitle='', pcd_size=0.5, cmap='Reds', zdir='y')
+                # plot_pcd_one_view(os.path.join(exp_path, f'train_{train_step}.png'),
+                #                   [inp[index].detach().cpu().numpy(), coarse[index].detach().cpu().numpy(
+                #                   ), fine[index].detach().cpu().numpy(), gt[index].detach().cpu().numpy()],
+                #                   ['Input', 'Coarse', 'Dense', 'Ground Truth'], xlim=(-0.5, 1), ylim=(-0.5, 1), zlim=(-0.5, 1))
 
         # Update learning rates
         lr_scheduler.step()
@@ -300,8 +302,8 @@ def train(models, trainLoader, valLoader, args):
                 loss1 = chamfer(coarse, gt)
                 loss2 = chamfer(fine, gt)
                 chamfer_loss = loss1 * 0.5 + loss2 * 0.5
-                mse_loss = MSE(base_rep, rep) * args.lambda_latent
-                loss = chamfer_loss + mse_loss
+                # mse_loss = MSE(base_rep, rep) * args.lambda_latent
+                loss = chamfer_loss
 
                 val_writer.add_scalar('loss', loss.item(), i)
                 val_loss += loss.item() * 1000
@@ -389,10 +391,13 @@ def test(models, testLoader, args):
 
             if args.testSave:
                 index = random.randint(0, inp.shape[0] - 1)
-                plot_pcd_one_view(os.path.join(exp_path, f'test_{count}.png'),
-                                  [inp[index].detach().cpu().numpy(), coarse[index].detach().cpu().numpy(
-                                  ), fine[index].detach().cpu().numpy(), gt[index].detach().cpu().numpy()],
-                                  ['Input', 'Coarse', 'Dense', 'Ground Truth'], xlim=(-0.5, 1), ylim=(-0.5, 1), zlim=(-0.5, 1))
+                # Save Image
+                plot_image_output_gt(os.path.join(exp_path, f'test_{count}.png'), A[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), fine[index].detach().cpu().numpy(), gt[index].detach(
+                ).cpu().numpy(), img_title='Input Image', output_title='Dense Output PCD', gt_title='Ground Truth PCD', suptitle='', pcd_size=0.5, cmap='Reds', zdir='y')
+                # plot_pcd_one_view(os.path.join(exp_path, f'test_{count}.png'),
+                #                   [inp[index].detach().cpu().numpy(), coarse[index].detach().cpu().numpy(
+                #                   ), fine[index].detach().cpu().numpy(), gt[index].detach().cpu().numpy()],
+                #                   ['Input', 'Coarse', 'Dense', 'Ground Truth'], xlim=(-0.5, 1), ylim=(-0.5, 1), zlim=(-0.5, 1))
                 count += 1
     test_loss /= len(testLoader)
     print_log(log_fd, f"Test Loss: {test_loss}")
