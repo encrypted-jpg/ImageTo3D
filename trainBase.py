@@ -252,7 +252,8 @@ def train(models, trainLoader, valLoader, args):
             coarse, fine = decoder(rep)
             loss1 = chamfer(coarse, gt)
             loss2 = chamfer(fine, gt)
-            chamfer_loss = loss1 + loss2
+            chamfer_loss = loss1 * args.lambda_coarse
+            chamfer_loss += loss2 * (1 - args.lambda_coarse)
             mse_loss = MSE(base_rep, rep) * args.lambda_latent
             loss = chamfer_loss + mse_loss
             loss.backward()
@@ -425,13 +426,15 @@ def get_args():
                         help="Learning rate")
     parser.add_argument("--gpu", type=int, default=0, help="GPU to use")
     parser.add_argument("--modelPath", type=str, help="Path to model")
-    parser.add_argument("--pcn", type=str, default="",
+    parser.add_argument("--pcn", type=str, default='weights/pcn_base/model.pth',
                         help="Path to PCN model")
     parser.add_argument("--test", action="store_true", help="Test model")
     parser.add_argument("--testSave", action="store_true",
                         help="Save test output")
     parser.add_argument("--resume", action="store_true",
                         help="Resume training")
+    parser.add_argument("--lambda_coarse", type=float,
+                        default=0.5, help="coarse loss weight")
     parser.add_argument("--lambda_pixel", type=float,
                         default=10, help="pixelwise loss weight")
     parser.add_argument("--lambda_latent", type=float,
