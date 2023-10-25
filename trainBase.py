@@ -255,7 +255,7 @@ def train(models, trainLoader, valLoader, args):
             chamfer_loss = loss1 * args.lambda_coarse
             chamfer_loss += loss2 * (1 - args.lambda_coarse)
             mse_loss = MSE(base_rep, rep) * args.lambda_latent
-            loss = chamfer_loss + mse_loss
+            loss = chamfer_loss * args.lambda_chamfer + mse_loss
             loss.backward()
             optimizer.step()
 
@@ -435,6 +435,8 @@ def get_args():
                         help="Resume training")
     parser.add_argument("--lambda_coarse", type=float,
                         default=0.5, help="coarse loss weight")
+    parser.add_argument("--lambda_chamfer", type=float,
+                        default=2, help="chamfer loss weight")
     parser.add_argument("--lambda_pixel", type=float,
                         default=10, help="pixelwise loss weight")
     parser.add_argument("--lambda_latent", type=float,
