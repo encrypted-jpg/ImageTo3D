@@ -253,7 +253,7 @@ def train(models, trainLoader, valLoader, args):
             optimizer_E.step()
             optimizer_D.step()
 
-            train_loss += loss.item() * 1000
+            train_loss += loss2.item() * 1000
             train_step += 1
 
             train_writer.add_scalar('loss', loss.item(), train_step)
@@ -290,9 +290,9 @@ def train(models, trainLoader, valLoader, args):
 
                 rep = encoder(inp)
                 coarse, fine = decoder(rep)
-                loss1 = chamfer(coarse, gt)
+                # loss1 = chamfer(coarse, gt)
                 loss2 = chamfer(fine, gt)
-                loss = loss1 * 0.5 + loss2 * 0.5
+                loss = loss2
 
                 val_writer.add_scalar('loss', loss.item(), i)
                 val_loss += loss.item() * 1000
@@ -374,9 +374,9 @@ def test(models, testLoader, args):
 
             rep = encoder(inp)
             coarse, fine = decoder(rep)
-            loss1 = chamfer(coarse, gt)
+            # loss1 = chamfer(coarse, gt)
             loss2 = chamfer(fine, gt)
-            loss = loss1 * 0.5 + loss2 * 0.5
+            loss = loss2
             test_loss += loss.item() * 1000
 
             if args.testSave:

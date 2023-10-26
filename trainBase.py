@@ -259,7 +259,7 @@ def train(models, trainLoader, valLoader, args):
             loss.backward()
             optimizer.step()
 
-            train_loss += chamfer_loss.item() * 1000
+            train_loss += loss2.item() * 1000
             train_step += 1
 
             train_writer.add_scalar('loss', loss.item(), train_step)
@@ -299,9 +299,9 @@ def train(models, trainLoader, valLoader, args):
                 rep = img_encoder(img)
                 base_rep = encoder(inp)
                 coarse, fine = decoder(rep)
-                loss1 = chamfer(coarse, gt)
+                # loss1 = chamfer(coarse, gt)
                 loss2 = chamfer(fine, gt)
-                chamfer_loss = loss1 * 0.5 + loss2 * 0.5
+                chamfer_loss = loss2
                 # mse_loss = MSE(base_rep, rep) * args.lambda_latent
                 loss = chamfer_loss
 
@@ -383,9 +383,9 @@ def test(models, testLoader, args):
             rep = img_encoder(img)
             # base_rep = encoder(inp)
             coarse, fine = decoder(rep)
-            loss1 = chamfer(coarse, gt)
+            # loss1 = chamfer(coarse, gt)
             loss2 = chamfer(fine, gt)
-            chamfer_loss = loss1 * 0.5 + loss2 * 0.5
+            chamfer_loss = loss2
             loss = chamfer_loss
             test_loss += loss.item() * 1000
 
