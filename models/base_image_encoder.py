@@ -1,7 +1,6 @@
 from torch import nn
 import torch.nn.functional as F
 import torch
-from torchvision.models import EfficientNet_B4_Weights
 import torchvision.models as models
 
 

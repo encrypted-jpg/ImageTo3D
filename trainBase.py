@@ -266,7 +266,7 @@ def train(models, trainLoader, valLoader, args):
 
             if train_step % args.save_iter == 0:
                 index = random.randint(0, inp.shape[0] - 1)
-                plot_image_output_gt(os.path.join(exp_path, f'test_{train_step}.png'), A[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), fine[index].detach().cpu().numpy(), gt[index].detach(
+                plot_image_output_gt(os.path.join(exp_path, f'train_{train_step}.png'), A[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), fine[index].detach().cpu().numpy(), gt[index].detach(
                 ).cpu().numpy(), img_title='Input Image', output_title='Dense Output PCD', gt_title='Ground Truth PCD', suptitle='', pcd_size=0.5, cmap='Reds', zdir='y')
                 # plot_pcd_one_view(os.path.join(exp_path, f'train_{train_step}.png'),
                 #                   [inp[index].detach().cpu().numpy(), coarse[index].detach().cpu().numpy(

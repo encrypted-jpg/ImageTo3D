@@ -492,96 +492,102 @@ def test(models, testLoader, args):
     device = torch.device(
         f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 
-    netG_A2B, netG_B2A, netD_A, netD_B = models
-    netG_A2B = netG_A2B.to(device)
-    netG_B2A = netG_B2A.to(device)
-    netD_A = netD_A.to(device)
-    netD_B = netD_B.to(device)
-
-    # Optimizers & LR schedulers
-    optimizer_G = torch.optim.Adam(itertools.chain(netG_A2B.parameters(), netG_B2A.parameters()),
-                                   lr=args.lr, betas=(0.5, 0.999))
-    optimizer_D_A = torch.optim.Adam(
-        netD_A.parameters(), lr=args.lr, betas=(0.5, 0.999))
-    optimizer_D_B = torch.optim.Adam(
-        netD_B.parameters(), lr=args.lr, betas=(0.5, 0.999))
+    generator, encoder, D_VAE, D_LR = models
+    generator = generator.to(device)
+    # encoder = encoder.to(device)
+    # D_VAE = D_VAE.to(device)
+    # D_LR = D_LR.to(device)
 
     # Lossess
-    criterion_GAN = torch.nn.MSELoss()  # lsgan
-    # criterion_GAN = torch.nn.BCEWithLogitsLoss() #vanilla
-    criterion_cycle = torch.nn.L1Loss()
-    criterion_identity = torch.nn.L1Loss()
+    mae_loss = torch.nn.L1Loss()
+    mae_loss = mae_loss.to(device)
+
+    # Optimizers & LR schedulers
+    # optimizer_E = torch.optim.Adam(encoder.parameters(), lr=args.lr)
+    optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr)
+    # optimizer_D_VAE = torch.optim.Adam(D_VAE.parameters(), lr=args.lr)
+    # optimizer_D_LR = torch.optim.Adam(D_LR.parameters(), lr=args.lr)
 
     if args.modelPath:
         print_log(log_fd, f"Loading checkpoint from {args.modelPath}")
         checkpoint = torch.load(args.modelPath)
-        netG_A2B.load_state_dict(checkpoint['netG_A2B'])
+        generator.load_state_dict(checkpoint['generator'])
+        # encoder.load_state_dict(checkpoint['encoder'])
+        # D_VAE.load_state_dict(checkpoint['D_VAE'])
+        # D_LR.load_state_dict(checkpoint['D_LR'])
+        args.epoch = checkpoint['epoch'] + 1
         print_log(
             log_fd, f"Checkpoint loaded (epoch {checkpoint['epoch']}, loss {checkpoint['loss']})")
 
+    # Inputs & targets memory allocation
     Tensor = torch.cuda.FloatTensor if device.type == 'cuda' else torch.Tensor
-    input_A = Tensor(args.batch_size, 3, args.size, args.size).to(device)
-    input_B = Tensor(args.batch_size, 3, args.size, args.size).to(device)
-    target_real = Variable(
-        Tensor(args.batch_size).fill_(1.0), requires_grad=False).to(device)
-    target_fake = Variable(
-        Tensor(args.batch_size).fill_(0.0), requires_grad=False).to(device)
-
-    to_pil = transforms.ToPILImage()
+    valid = 1
+    fake = 0
     test_loss = 0.0
-    netG_A2B.eval()
-    netG_B2A.eval()
-    netD_A.eval()
-    netD_B.eval()
-    count = 0
+
+    generator.eval()
+    # encoder.eval()
+    # D_VAE.eval()
+    # D_LR.eval()
     with torch.no_grad():
-        loader = tqdm(enumerate(testLoader), total=len(testLoader))
-        for i, batch in loader:
+        loader = tqdm(testLoader)
+        for i, batch in enumerate(loader):
             loader.set_description(f"Loss: {(test_loss/(i+1)):.4f}")
             # Set model input
             taxonomy_id, model_id, (A, B) = batch
-            real_A = Variable(input_A.copy_(A))
-            real_B = Variable(input_B.copy_(B))
+            real_A = Variable(A.type(Tensor))
+            # real_B = Variable(B.type(Tensor))
 
+            # -------------------------------
+            #  Train Generator and Encoder
+            # -------------------------------
+
+            # optimizer_E.zero_grad()
             optimizer_G.zero_grad()
 
-            # GAN loss
-            fake_B = netG_A2B(real_A)
-            pred_fake = netD_B(fake_B)
-            loss_GAN_A2B = criterion_GAN(
-                pred_fake, target_real)
+            # ----------
+            # cVAE-GAN
+            # ----------
 
-            fake_A = netG_B2A(real_B)
-            pred_fake = netD_A(fake_A)
-            loss_GAN_B2A = criterion_GAN(
-                pred_fake, target_real)
+            # Produce output using encoding of B (cVAE-GAN)
+            # mu, logvar = encoder(real_B)
+            # encoded_z = reparameterization(mu, logvar, device, args)
+            # sampled_z = Variable(torch.tensor(np.random.normal(
+            #     0, 1, (real_A.size(0), args.latent_dim)), dtype=torch.float32, device=device))
+            sampled_z = torch.randn(real_A.size(0), args.latent_dim).to(device)
+            fake_B = generator(real_A, sampled_z)
 
-            # Cycle loss
-            recovered_A = netG_B2A(fake_B)
-            loss_cycle_ABA = criterion_cycle(
-                recovered_A, real_A)*10.0
+            # Pixelwise loss of translated image by VAE
+            # loss_pixel = mae_loss(fake_B, real_B)
+            # # Kullback-Leibler divergence of encoded B
+            # loss_kl = 0.5 * \
+            #     torch.sum(torch.exp(logvar) + mu ** 2 - logvar - 1)
+            # # Adversarial loss
+            # loss_VAE_GAN = D_VAE.compute_loss(fake_B, valid)
 
-            recovered_B = netG_A2B(fake_A)
-            loss_cycle_BAB = criterion_cycle(
-                recovered_B, real_B)*10.0
+            # # ---------
+            # # cLR-GAN
+            # # ---------
 
-            loss_G = loss_GAN_A2B + loss_GAN_B2A + loss_cycle_ABA + loss_cycle_BAB
-            test_loss += loss_G.item()
+            # # Produce output using sampled z (cLR-GAN)
+            # sampled_z = Variable(Tensor(np.random.normal(
+            #     0, 1, (real_A.size(0), args.latent_dim))))
+            # _fake_B = generator(real_A, sampled_z)
+            # # cLR Loss: Adversarial loss
+            # loss_LR_GAN = D_LR.compute_loss(_fake_B, valid)
 
+            # # ----------------------------------
+            # # Total Loss (Generator + Encoder)
+            # # ----------------------------------
+
+            # loss_GE = loss_VAE_GAN + loss_LR_GAN + args.lambda_pixel * \
+            #     loss_pixel + args.lambda_kl * loss_kl
+            # test_loss += loss_GE.item()
             if args.testSave:
-                img_fake_A = 0.5 * (fake_A.detach().data + 1.0)
-                img_fake_B = 0.5 * (fake_B.detach().data + 1.0)
-                img_real_A = 0.5 * (real_A.detach().data + 1.0)
-                img_real_B = 0.5 * (real_B.detach().data + 1.0)
-                for j in range(len(model_id)):
-                    _img_real_A = to_pil(img_real_A[j].data.squeeze(0).cpu())
-                    _img_real_B = to_pil(img_real_B[j].data.squeeze(0).cpu())
-                    _img_fake_A = to_pil(img_fake_A[j].data.squeeze(0).cpu())
-                    _img_fake_B = to_pil(img_fake_B[j].data.squeeze(0).cpu())
-                    save_imgs(_img_real_A, _img_real_B, _img_fake_A, _img_fake_B,
-                              os.path.join(exp_path, f"test_{count}.png"))
-                    count += 1
-    test_loss /= len(testLoader)
+                save_batch_imgs(A, fake_B, os.path.join(
+                    exp_path, f"test_{i}.png"))
+
+    test_loss /= len(valLoader)
     print_log(log_fd, f"Test Loss: {test_loss}")
 
 
