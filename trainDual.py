@@ -501,7 +501,7 @@ def get_args():
                         help="Path to PCN model")
     parser.add_argument("--generator", type=str,
                         default='weights/bicycle1000/model.pth')
-    parser.add_argument("--base", type=str, default="",
+    parser.add_argument("--base", type=str, default="weights/base/model.pth",
                         help="Base Image Encoder model")
     parser.add_argument("--test", action="store_true", help="Test model")
     parser.add_argument("--testSave", action="store_true",
