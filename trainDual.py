@@ -418,6 +418,7 @@ def test(models, testLoader, args):
         print_log(
             log_fd, f"Checkpoint loaded (epoch {checkpoint['epoch']}, loss {checkpoint['loss']})")
 
+    # torch.manual_seed(42)
     test_loss = 0.0
     img_encoder.eval()
     # encoder.eval()
@@ -454,7 +455,7 @@ def test(models, testLoader, args):
             test_loss += loss.item() * 1000
 
             if args.testSave:
-                index = random.randint(0, inp.shape[0] - 1)
+                index = 0
                 # Save Image
                 plot_2_image_output_gt(os.path.join(exp_path, f'train_{count}.png'), A[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), img2[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), fine[index].detach().cpu().numpy(), gt[index].detach(
                 ).cpu().numpy(), img1_title='Input Image', img2_title=f'{args.b_tag} Image', output_title='Dense Output PCD', gt_title='Ground Truth PCD', suptitle='', pcd_size=0.5, cmap='Reds', zdir='y')

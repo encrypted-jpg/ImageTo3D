@@ -249,6 +249,7 @@ def train(models, trainLoader, valLoader, args):
             loss1 = chamfer(coarse, gt)
             loss2 = chamfer(fine, gt)
             loss = loss1 * x + loss2 * (1 - x)
+            loss *= 2.0
             loss.backward()
             optimizer_E.step()
             optimizer_D.step()

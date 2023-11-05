@@ -390,7 +390,7 @@ def test(models, testLoader, args):
             test_loss += loss.item() * 1000
 
             if args.testSave:
-                index = random.randint(0, inp.shape[0] - 1)
+                index = 0
                 # Save Image
                 plot_image_output_gt(os.path.join(exp_path, f'test_{count}.png'), A[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), fine[index].detach().cpu().numpy(), gt[index].detach(
                 ).cpu().numpy(), img_title='Input Image', output_title='Dense Output PCD', gt_title='Ground Truth PCD', suptitle='', pcd_size=0.5, cmap='Reds', zdir='y')
