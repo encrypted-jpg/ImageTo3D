@@ -18,6 +18,7 @@ from tqdm import tqdm
 import time
 from PIL import Image
 import cv2
+import pandas as pd
 import itertools
 import datetime
 import random
@@ -388,6 +389,7 @@ def train(models, trainLoader, valLoader, args):
 def test(models, testLoader, args):
     _, _, _, _, _, _, exp_path, log_fd = prepare_logger(
         args.log_dir, args.exp)
+    print_log(log_fd, str(args))
     device = torch.device(
         f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 
@@ -418,12 +420,13 @@ def test(models, testLoader, args):
         print_log(
             log_fd, f"Checkpoint loaded (epoch {checkpoint['epoch']}, loss {checkpoint['loss']})")
 
-    # torch.manual_seed(42)
+    # torch.manual_seed(21)
     test_loss = 0.0
     img_encoder.eval()
     # encoder.eval()
     decoder.eval()
     count = 0
+    key_loss = {}
     with torch.no_grad():
         loader = tqdm(enumerate(testLoader), total=len(testLoader))
         for i, batch in loader:
@@ -438,6 +441,7 @@ def test(models, testLoader, args):
 
             sampled_z = torch.randn(
                 img1.size(0), args.gen_latent_dim).to(device)
+            # sampled_z = torch.zeros_like(sampled_z)
             img2 = generator(img1, sampled_z)
             img2 = torch.max(img2, torch.zeros_like(img2))
             img2 = torch.min(img2, torch.ones_like(img2))
@@ -453,11 +457,17 @@ def test(models, testLoader, args):
             # mse_loss = MSE(base_rep, rep) * args.lambda_latent
             loss = chamfer_loss
             test_loss += loss.item() * 1000
+            for i in range(img1.shape[0]):
+                curr_loss = chamfer(fine[i].unsqueeze(0), gt[i].unsqueeze(0))
+                if taxonomy_id[i] not in key_loss:
+                    key_loss[taxonomy_id[i]] = [curr_loss.item() * 1000]
+                else:
+                    key_loss[taxonomy_id[i]].append((curr_loss.item() * 1000))
 
             if args.testSave:
                 index = 0
                 # Save Image
-                plot_2_image_output_gt(os.path.join(exp_path, f'train_{count}.png'), A[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), img2[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), fine[index].detach().cpu().numpy(), gt[index].detach(
+                plot_2_image_output_gt(os.path.join(exp_path, f'test_{count}.png'), A[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), img2[index].detach().cpu().transpose(1, 0).transpose(1, 2).numpy(), fine[index].detach().cpu().numpy(), gt[index].detach(
                 ).cpu().numpy(), img1_title='Input Image', img2_title=f'{args.b_tag} Image', output_title='Dense Output PCD', gt_title='Ground Truth PCD', suptitle='', pcd_size=0.5, cmap='Reds', zdir='y')
                 # plot_pcd_one_view(os.path.join(exp_path, f'test_{count}.png'),
                 #                   [inp[index].detach().cpu().numpy(), coarse[index].detach().cpu().numpy(
@@ -466,6 +476,17 @@ def test(models, testLoader, args):
                 count += 1
     test_loss /= len(testLoader)
     print_log(log_fd, f"Test Loss: {test_loss}")
+    print_log(log_fd, "Taxonomy Losses")
+    for key, value in key_loss.items():
+        print_log(log_fd, f"{key}\t{sum(value)/len(value)}")
+    # save dictionary as pandas dataframe
+    df = pd.DataFrame.from_dict({key: round(sum(value)/len(value), 4)
+                                for key, value in key_loss.items()}, orient='index')
+    # sort rows based on first column
+    df = df.sort_values(by=[0], ascending=False)
+    df.to_csv(os.path.join(exp_path, 'test.csv'))
+    for key, value in key_loss.items():
+        print(round(sum(value)/len(value), 3))
 
 
 def get_args():

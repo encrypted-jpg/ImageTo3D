@@ -19,3 +19,4 @@ Pointnet2_PyTorch/*
 Pointnet2_PyTorch
 extensions/chamfer_dist/*/*
 Models/*
+*.sh

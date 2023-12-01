@@ -18,6 +18,7 @@ from PIL import Image
 import cv2
 import itertools
 import datetime
+import pandas as pd
 import random
 from tensorboardX import SummaryWriter
 import visdom
@@ -339,6 +340,7 @@ def train(models, trainLoader, valLoader, args):
 def test(models, testLoader, args):
     _, _, _, _, _, _, exp_path, log_fd = prepare_logger(
         args.log_dir, args.exp)
+    print_log(log_fd, str(args))
     device = torch.device(
         f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 
@@ -368,6 +370,7 @@ def test(models, testLoader, args):
     # encoder.eval()
     decoder.eval()
     count = 0
+    key_loss = {}
     with torch.no_grad():
         loader = tqdm(enumerate(testLoader), total=len(testLoader))
         for i, batch in loader:
@@ -388,6 +391,10 @@ def test(models, testLoader, args):
             chamfer_loss = loss2
             loss = chamfer_loss
             test_loss += loss.item() * 1000
+            if taxonomy_id[0] not in key_loss:
+                key_loss[taxonomy_id[0]] = [loss.item() * 1000]
+            else:
+                key_loss[taxonomy_id[0]].append((loss.item() * 1000))
 
             if args.testSave:
                 index = 0
@@ -401,6 +408,18 @@ def test(models, testLoader, args):
                 count += 1
     test_loss /= len(testLoader)
     print_log(log_fd, f"Test Loss: {test_loss}")
+    if args.batch_size == 1:
+        print_log(log_fd, "Taxonomy Losses")
+        for key, value in key_loss.items():
+            print_log(log_fd, f"{key}\t{sum(value)/len(value)}")
+        # save dictionary as pandas dataframe
+        df = pd.DataFrame.from_dict({key: round(sum(value)/len(value), 4)
+                                    for key, value in key_loss.items()}, orient='index')
+        # sort rows based on first column
+        df = df.sort_values(by=[0], ascending=False)
+        df.to_csv(os.path.join(exp_path, 'test.csv'))
+        for key, value in key_loss.items():
+            print(round(sum(value)/len(value), 3))
 
 
 def get_args():

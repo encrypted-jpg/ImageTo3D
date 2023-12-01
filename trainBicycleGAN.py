@@ -8,6 +8,7 @@ import numpy as np
 from torch.autograd import Variable
 import os
 import open3d as o3d
+import pandas as pd
 import argparse
 import json
 from models.bicyclegan import Generator, MultiDiscriminator, Encoder
@@ -19,7 +20,6 @@ import itertools
 import datetime
 import random
 from tensorboardX import SummaryWriter
-import visdom
 from datasets import DiffImageDataset
 from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal
 
@@ -89,16 +89,18 @@ def save_imgs(img1, img2, img3, img4, path):
     concatenated_image.save(path)
 
 
-def save_batch_imgs(real_A, fake_B, path):
+def save_batch_imgs(real_A, fake_B, real_B, path):
     img_samples = None
     fake_B = [x for x in fake_B.data.cpu()]
+    real_B = [x for x in real_B.data.cpu()]
     mids = [len(fake_B) // 4, len(fake_B) // 2, 3 * len(fake_B) // 4]
     i = 0
     img_list = []
-    for img_A, f_B in zip(real_A, fake_B):
+    for img_A, f_B, r_B in zip(real_A, fake_B, real_B):
         f_B = f_B.view(1, *f_B.shape)
         img_A = img_A.view(1, *img_A.shape)
-        img_sample = torch.cat((img_A, f_B), -1)
+        r_B = r_B.view(1, *r_B.shape)
+        img_sample = torch.cat((img_A, f_B, r_B), -1)
         img_sample = img_sample.view(1, *img_sample.shape)
         # Concatenate with previous samples vertically
         img_samples = img_sample if img_samples is None else torch.cat(
@@ -529,6 +531,7 @@ def test(models, testLoader, args):
     # encoder.eval()
     # D_VAE.eval()
     # D_LR.eval()
+    key_loss = {}
     with torch.no_grad():
         loader = tqdm(testLoader)
         for i, batch in enumerate(loader):
@@ -536,7 +539,7 @@ def test(models, testLoader, args):
             # Set model input
             taxonomy_id, model_id, (A, B) = batch
             real_A = Variable(A.type(Tensor))
-            # real_B = Variable(B.type(Tensor))
+            real_B = Variable(B.type(Tensor))
 
             # -------------------------------
             #  Train Generator and Encoder
@@ -558,7 +561,7 @@ def test(models, testLoader, args):
             fake_B = generator(real_A, sampled_z)
 
             # Pixelwise loss of translated image by VAE
-            # loss_pixel = mae_loss(fake_B, real_B)
+            loss_pixel = mae_loss(fake_B, real_B)
             # # Kullback-Leibler divergence of encoded B
             # loss_kl = 0.5 * \
             #     torch.sum(torch.exp(logvar) + mu ** 2 - logvar - 1)
@@ -582,13 +585,31 @@ def test(models, testLoader, args):
 
             # loss_GE = loss_VAE_GAN + loss_LR_GAN + args.lambda_pixel * \
             #     loss_pixel + args.lambda_kl * loss_kl
-            # test_loss += loss_GE.item()
+            loss_GE = loss_pixel
+            test_loss += loss_GE.item() * 1000
+            for i in range(real_A.shape[0]):
+                curr_loss = mae_loss(fake_B[i], real_B[i]) * 1000
+                if taxonomy_id[i] not in key_loss:
+                    key_loss[taxonomy_id[i]] = [curr_loss.item()]
+                else:
+                    key_loss[taxonomy_id[i]].append((curr_loss.item()))
             if args.testSave:
-                save_batch_imgs(A, fake_B, os.path.join(
+                save_batch_imgs(A, fake_B, real_B, os.path.join(
                     exp_path, f"test_{i}.png"))
 
     test_loss /= len(valLoader)
     print_log(log_fd, f"Test Loss: {test_loss}")
+    print_log(log_fd, "Taxonomy Losses")
+    for key, value in key_loss.items():
+        print_log(log_fd, f"{key}\t{sum(value)/len(value)}")
+    # save dictionary as pandas dataframe
+    df = pd.DataFrame.from_dict({key: round(sum(value)/len(value), 4)
+                                for key, value in key_loss.items()}, orient='index')
+    # sort rows based on first column
+    df = df.sort_values(by=[0], ascending=False)
+    df.to_csv(os.path.join(exp_path, 'test.csv'))
+    for key, value in key_loss.items():
+        print(round(sum(value)/len(value), 3))
 
 
 def get_args():

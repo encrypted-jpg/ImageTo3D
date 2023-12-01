@@ -14,7 +14,7 @@ def o3d_visualize_pc(pc):
 
 def plot_image_output_gt(filename, image, output_pcd, gt_pcd, img_title='Image', output_title='Output PCD', gt_title='Ground Truth PCD', suptitle='', pcd_size=0.5, cmap='Reds', zdir='y',
                          xlim=(-0.5, 0.5), ylim=(-0.5, 0.5), zlim=(-0.5, 0.5)):
-    fig = plt.figure(figsize=(9, 3 * 1.4))
+    fig = plt.figure(figsize=(3*4, 5))
     elev = 30
     azim = -45
 
@@ -22,6 +22,7 @@ def plot_image_output_gt(filename, image, output_pcd, gt_pcd, img_title='Image',
     ax_img = fig.add_subplot(1, 3, 1)
     ax_img.imshow(image)
     ax_img.set_title(img_title)
+    ax_img.set_axis_off()
 
     # Plot the output point cloud
     color_output = output_pcd[:, 0]
@@ -56,7 +57,7 @@ def plot_image_output_gt(filename, image, output_pcd, gt_pcd, img_title='Image',
 
 def plot_2_image_output_gt(filename, image1, image2, output_pcd, gt_pcd, img1_title='Image', img2_title='Depth', output_title='Output PCD', gt_title='Ground Truth PCD', suptitle='', pcd_size=0.5, cmap='Reds', zdir='y',
                            xlim=(-0.5, 0.5), ylim=(-0.5, 0.5), zlim=(-0.5, 0.5)):
-    fig = plt.figure(figsize=(15, 4 * 1.4))
+    fig = plt.figure(figsize=(4*4, 5))
     elev = 30
     azim = -45
 
@@ -64,9 +65,11 @@ def plot_2_image_output_gt(filename, image1, image2, output_pcd, gt_pcd, img1_ti
     ax_img = fig.add_subplot(1, 4, 1)
     ax_img.imshow(image1)
     ax_img.set_title(img1_title)
+    ax_img.set_axis_off()
     ax_img = fig.add_subplot(1, 4, 2)
     ax_img.imshow(image2)
     ax_img.set_title(img2_title)
+    ax_img.set_axis_off()
 
     # Plot the output point cloud
     color_output = output_pcd[:, 0]
