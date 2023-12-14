@@ -111,15 +111,15 @@ def load_generator(generator, path):
     return generator
 
 
-def load_base(img_encoder, path):
+def load_base(img_generator, path):
     if path == "":
-        return img_encoder
+        return img_generator
     print(f"Loading Base Image Encoder model from {path}")
     checkpoint = torch.load(path)
-    img_encoder.first_encoder.load_state_dict(checkpoint['img_encoder'])
+    img_generator.first_encoder.load_state_dict(checkpoint['img_encoder'])
 
     print(f"Base Image Encoder Model loaded")
-    return img_encoder
+    return img_generator
 
 
 def train(models, trainLoader, valLoader, args):
@@ -216,7 +216,7 @@ def train(models, trainLoader, valLoader, args):
             loss.backward()
             optimizer.step()
 
-            train_loss += loss2.item() * 1000
+            train_loss += loss.item() * 1000
             train_step += 1
 
             train_writer.add_scalar('loss', loss.item(), train_step)
@@ -464,7 +464,8 @@ def get_args():
 
 if __name__ == "__main__":
     args = get_args()
-
+    # set torch seed
+    torch.manual_seed(time.time())
     trainLoader, testLoader, valLoader = dataLoaders(args)
     models = get_model(args)
     if args.test:
