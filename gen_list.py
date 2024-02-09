@@ -4,7 +4,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--filelist', type=str, default='finalfilelist.txt')
-parser.add_argument('--top', type=int, default=8)
+parser.add_argument('--top', type=int, default=20)
 parser.add_argument('--count', type=int, default=1250)
 parser.add_argument('--train', type=float, default=0.8)
 parser.add_argument('--test', type=float, default=0.1)

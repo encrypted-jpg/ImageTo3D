@@ -24,7 +24,7 @@ from tensorboardX import SummaryWriter
 import visdom
 from datasets import PCNImageDataset
 from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal, plot_pcd_one_view, plot_image_output_gt
-from extensions.chamfer_dist import ChamferDistanceL1
+from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2
 
 
 def make_dir(dir_path):
@@ -126,18 +126,18 @@ def dataLoaders(args):
     batch_size = args.batch_size
 
     trainDataset = PCNImageDataset(
-        folder, json, mode='train', b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+        folder, json, mode='train', b_tag=args.b_tag, img_height=args.size, img_width=args.size, img_count=args.img_count)
     testDataset = PCNImageDataset(
-        folder, json, mode='test', b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+        folder, json, mode='test', b_tag=args.b_tag, img_height=args.size, img_width=args.size, img_count=args.img_count)
     valDataset = PCNImageDataset(
-        folder, json, mode='val', b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+        folder, json, mode='val', b_tag=args.b_tag, img_height=args.size, img_width=args.size, img_count=args.img_count)
 
     trainLoader = DataLoader(
-        trainDataset, batch_size=batch_size, shuffle=True, drop_last=True)
+        trainDataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=8, prefetch_factor=8, persistent_workers=True)
     testLoader = DataLoader(
-        testDataset, batch_size=batch_size, shuffle=False, drop_last=True)
+        testDataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8, prefetch_factor=8, persistent_workers=True)
     valLoader = DataLoader(
-        valDataset, batch_size=batch_size, shuffle=False, drop_last=True)
+        valDataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8, prefetch_factor=8, persistent_workers=True)
     return trainLoader, testLoader, valLoader
 
 
@@ -152,7 +152,7 @@ def reparameterization(mu, logvar, Tensor, args):
 def get_model(args):
     img_encoder = BaseImageEncoder(latent_dim=1024)
     encoder = PCNEncoder(latent_dim=1024)
-    decoder = PCNDecoder(latent_dim=1024, num_dense=16384)
+    decoder = PCNDecoder(latent_dim=1024, num_dense=args.num_dense)
     print(
         f"Image Encoder Parameters: {round(count_parameters(img_encoder)/ 1e6, 4)}")
     print(f"Encoder Parameters: {round(count_parameters(encoder)/ 1e6, 4)}")
@@ -391,10 +391,12 @@ def test(models, testLoader, args):
             chamfer_loss = loss2
             loss = chamfer_loss
             test_loss += loss.item() * 1000
-            if taxonomy_id[0] not in key_loss:
-                key_loss[taxonomy_id[0]] = [loss.item() * 1000]
-            else:
-                key_loss[taxonomy_id[0]].append((loss.item() * 1000))
+            for i in range(img.shape[0]):
+                curr_loss = chamfer(fine[i].unsqueeze(0), gt[i].unsqueeze(0))
+                if taxonomy_id[i] not in key_loss:
+                    key_loss[taxonomy_id[i]] = [curr_loss.item() * 1000]
+                else:
+                    key_loss[taxonomy_id[i]].append((curr_loss.item() * 1000))
 
             if args.testSave:
                 index = 0
@@ -408,24 +410,26 @@ def test(models, testLoader, args):
                 count += 1
     test_loss /= len(testLoader)
     print_log(log_fd, f"Test Loss: {test_loss}")
-    if args.batch_size == 1:
-        print_log(log_fd, "Taxonomy Losses")
-        for key, value in key_loss.items():
-            print_log(log_fd, f"{key}\t{sum(value)/len(value)}")
-        # save dictionary as pandas dataframe
-        df = pd.DataFrame.from_dict({key: round(sum(value)/len(value), 4)
-                                    for key, value in key_loss.items()}, orient='index')
-        # sort rows based on first column
-        df = df.sort_values(by=[0], ascending=False)
-        df.to_csv(os.path.join(exp_path, 'test.csv'))
-        for key, value in key_loss.items():
-            print(round(sum(value)/len(value), 3))
+    print_log(log_fd, "Taxonomy Losses")
+    for key, value in key_loss.items():
+        print_log(log_fd, f"{key}\t{sum(value)/len(value)}")
+    # save dictionary as pandas dataframe
+    df = pd.DataFrame.from_dict({key: round(sum(value)/len(value), 4)
+                                for key, value in key_loss.items()}, orient='index')
+    # sort rows based on first column
+    df = df.sort_values(by=[0], ascending=False)
+    df.to_csv(os.path.join(exp_path, 'test.csv'))
+    for key, value in key_loss.items():
+        print(round(sum(value)/len(value), 3))
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--folder", type=str, default="ShapeNetRender", help="Folder containing the data")
+        "--folder", type=str, default="../ShapeNet/", help="Folder containing the data")
+    parser.add_argument("--num_dense", type=int, default=1024,)
+    parser.add_argument("--img_count", type=int,
+                        default=12, help="Image count")
     parser.add_argument("--json", type=str, default="final.json",
                         help="JSON file containing the data")
     parser.add_argument("--b_tag", type=str, default="depth",

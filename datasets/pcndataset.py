@@ -22,7 +22,7 @@ class PCNDataset(data.Dataset):
         for key, value in data.items():
             for model in value[mode]:
                 _file = os.path.join(
-                    self.folder, "complete", key, model+".pcd")
+                    self.folder, "complete", key, model+".npy")
                 self.file_list.append({
                     'taxonomy_id': key,
                     'model_id': model,

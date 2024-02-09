@@ -10,7 +10,7 @@ from .constants import CACHE_SIZE
 
 
 class PCNImageDataset(data.Dataset):
-    def __init__(self, folder, jsonfile, transform=None, mode='train', b_tag="depth", img_height=224, img_width=224):
+    def __init__(self, folder, jsonfile, transform=None, mode='train', b_tag="depth", img_height=224, img_width=224, img_count=12):
         self.folder = folder
         self.jsonfile = jsonfile
         self.transform = transforms.Compose(transform)
@@ -23,9 +23,9 @@ class PCNImageDataset(data.Dataset):
         for key, value in data.items():
             for model in value[mode]:
                 _file = os.path.join(
-                    self.folder, "complete", key, model+".pcd")
+                    self.folder, "complete", key, model+".npy")
                 _image_base = os.path.join(self.folder, "image", key, model)
-                for idx in range(12):
+                for idx in range(img_count):
                     self.file_list.append({
                         'taxonomy_id': key,
                         'model_id': model,

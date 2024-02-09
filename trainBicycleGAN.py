@@ -132,18 +132,18 @@ def dataLoaders(args):
     ]
 
     trainDataset = DiffImageDataset(folder, json, mode='train', transform=transform,
-                                    b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+                                    b_tag=args.b_tag, img_height=args.size, img_width=args.size, img_count=args.img_count)
     testDataset = DiffImageDataset(folder, json, mode='test', transform=transform,
-                                   b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+                                   b_tag=args.b_tag, img_height=args.size, img_width=args.size, img_count=args.img_count)
     valDataset = DiffImageDataset(folder, json, mode='val', transform=transform,
-                                  b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+                                  b_tag=args.b_tag, img_height=args.size, img_width=args.size, img_count=args.img_count)
 
     trainLoader = DataLoader(
-        trainDataset, batch_size=batch_size, shuffle=True, drop_last=True)
+        trainDataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=8, prefetch_factor=4, persistent_workers=True)
     testLoader = DataLoader(
-        testDataset, batch_size=batch_size, shuffle=False, drop_last=True)
+        testDataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8, prefetch_factor=4, persistent_workers=True)
     valLoader = DataLoader(
-        valDataset, batch_size=batch_size, shuffle=False, drop_last=True)
+        valDataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8, prefetch_factor=4, persistent_workers=True)
     return trainLoader, testLoader, valLoader
 
 
@@ -239,7 +239,7 @@ def train(models, trainLoader, valLoader, args):
         # lr_scheduler_E.load_state_dict(checkpoint['lr_scheduler_E'])
         # lr_scheduler_D_VAE.load_state_dict(checkpoint['lr_scheduler_D_VAE'])
         # lr_scheduler_D_LR.load_state_dict(checkpoint['lr_scheduler_D_LR'])
-        args.epoch = checkpoint['epoch'] + 1
+        # args.epoch = checkpoint['epoch'] + 1
         # minLoss = checkpoint['loss']
         # minLossEpoch = args.epoch
         lr_scheduler_G, lr_scheduler_E, lr_scheduler_D_VAE, lr_scheduler_D_LR = get_scheduler(
@@ -371,7 +371,7 @@ def train(models, trainLoader, valLoader, args):
             train_writer.add_scalar('loss_kl', loss_kl.item(), train_step)
 
             if train_step % args.save_iter == 0:
-                save_batch_imgs(A, fake_B, os.path.join(
+                save_batch_imgs(A, fake_B, real_B, os.path.join(
                     exp_path, f"train_{train_step}.png"))
 
         # Update learning rates
@@ -615,11 +615,12 @@ def test(models, testLoader, args):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--folder", type=str, default="ShapeNetRender", help="Folder containing the data")
+        "--folder", type=str, default="../ShapeNet", help="Folder containing the data")
     parser.add_argument("--json", type=str, default="final.json",
                         help="JSON file containing the data")
     parser.add_argument("--b_tag", type=str, default="depth",
                         help="Tag for the B Image")
+    parser.add_argument("--img_count", type=int, default=3, help="Image count")
     parser.add_argument("--log_dir", type=str, default="logs", help="Log dir")
     parser.add_argument("--exp", type=str, default="exp", help="Experiment")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")

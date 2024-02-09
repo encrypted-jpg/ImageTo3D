@@ -114,11 +114,11 @@ def load_generator(generator, path):
 def load_base(img_generator, path):
     if path == "":
         return img_generator
-    print(f"Loading Base Image Encoder model from {path}")
-    checkpoint = torch.load(path)
-    img_generator.first_encoder.load_state_dict(checkpoint['img_encoder'])
+    # print(f"Loading Base Image Encoder model from {path}")
+    # checkpoint = torch.load(path)
+    # img_generator.first_encoder.load_state_dict(checkpoint['img_encoder'])
 
-    print(f"Base Image Encoder Model loaded")
+    # print(f"Base Image Encoder Model loaded")
     return img_generator
 
 
@@ -210,7 +210,7 @@ def train(models, trainLoader, valLoader, args):
             mse_loss = MSE(base_rep, rep) * args.lambda_latent
 
             kl_loss = -0.5 * torch.sum(1 + logvar - mean.pow(2) - logvar.exp())
-            kl_loss = kl_loss * args.lambda_kl
+            kl_loss = kl_loss * args.lambda_kl * ((train_step//2.0) + 1)
 
             loss = chamfer_loss + mse_loss + kl_loss
             loss.backward()
@@ -220,6 +220,10 @@ def train(models, trainLoader, valLoader, args):
             train_step += 1
 
             train_writer.add_scalar('loss', loss.item(), train_step)
+            train_writer.add_scalar(
+                'chamfer_loss', chamfer_loss.item(), train_step)
+            train_writer.add_scalar('mse_loss', mse_loss.item(), train_step)
+            train_writer.add_scalar('kl_loss', kl_loss.item(), train_step)
 
             if train_step % args.save_iter == 0:
                 index = random.randint(0, inp.shape[0] - 1)
@@ -265,13 +269,25 @@ def train(models, trainLoader, valLoader, args):
 
                 coarse, fine = decoder(rep)
 
-                # loss1 = chamfer(coarse, gt)
+                loss1 = chamfer(coarse, gt)
                 loss2 = chamfer(fine, gt)
-                chamfer_loss = loss2
-                # mse_loss = MSE(base_rep, rep) * args.lambda_latent
-                loss = chamfer_loss
+                chamfer_loss = loss1 * args.lambda_coarse
+                chamfer_loss += loss2 * (1 - args.lambda_coarse)
+                chamfer_loss = chamfer_loss * args.lambda_chamfer
+
+                mse_loss = MSE(base_rep, rep) * args.lambda_latent
+
+                kl_loss = -0.5 * \
+                    torch.sum(1 + logvar - mean.pow(2) - logvar.exp())
+                kl_loss = kl_loss * args.lambda_kl
+
+                loss = chamfer_loss + mse_loss + kl_loss
 
                 val_writer.add_scalar('loss', loss.item(), i)
+                val_writer.add_scalar(
+                    'chamfer_loss', chamfer_loss.item(), i)
+                val_writer.add_scalar('mse_loss', mse_loss.item(), i)
+                val_writer.add_scalar('kl_loss', kl_loss.item(), i)
                 val_loss += loss.item() * 1000
 
         val_loss /= len(valLoader)

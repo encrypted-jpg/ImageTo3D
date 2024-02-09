@@ -26,7 +26,8 @@ from tensorboardX import SummaryWriter
 import visdom
 from datasets import PCNImageDataset
 from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal, plot_pcd_one_view, plot_2_image_output_gt
-from extensions.chamfer_dist import ChamferDistanceL1
+from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2
+from time import time
 
 
 def make_dir(dir_path):
@@ -128,18 +129,18 @@ def dataLoaders(args):
     batch_size = args.batch_size
 
     trainDataset = PCNImageDataset(
-        folder, json, mode='train', b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+        folder, json, mode='train', b_tag=args.b_tag, img_height=args.size, img_width=args.size, img_count=args.img_count)
     testDataset = PCNImageDataset(
-        folder, json, mode='test', b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+        folder, json, mode='test', b_tag=args.b_tag, img_height=args.size, img_width=args.size, img_count=args.img_count)
     valDataset = PCNImageDataset(
-        folder, json, mode='val', b_tag=args.b_tag, img_height=args.size, img_width=args.size)
+        folder, json, mode='val', b_tag=args.b_tag, img_height=args.size, img_width=args.size, img_count=args.img_count)
 
     trainLoader = DataLoader(
-        trainDataset, batch_size=batch_size, shuffle=True, drop_last=True)
+        trainDataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=8, prefetch_factor=8, persistent_workers=True)
     testLoader = DataLoader(
-        testDataset, batch_size=batch_size, shuffle=False, drop_last=True)
+        testDataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8, prefetch_factor=8, persistent_workers=True)
     valLoader = DataLoader(
-        valDataset, batch_size=batch_size, shuffle=False, drop_last=True)
+        valDataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8, prefetch_factor=8, persistent_workers=True)
     return trainLoader, testLoader, valLoader
 
 
@@ -156,7 +157,7 @@ def get_model(args):
     generator = Generator(args.gen_latent_dim, input_shape)
     img_encoder = DualImageEncoder(latent_dim=1024)
     encoder = PCNEncoder(latent_dim=1024)
-    decoder = PCNDecoder(latent_dim=1024, num_dense=16384)
+    decoder = PCNDecoder(latent_dim=1024, num_dense=args.num_dense)
     print(
         f"Generator Parameters: {round(count_parameters(generator)/ 1e6, 4)}")
     print(
@@ -399,9 +400,6 @@ def test(models, testLoader, args):
     encoder.to(device)
     decoder.to(device)
 
-    # Lossess
-    chamfer = ChamferDistanceL1().to(device)
-
     # Optimizers & LR schedulers
     optimizer = torch.optim.Adam(
         img_encoder.parameters(), lr=args.lr, betas=(0.5, 0.999))
@@ -427,6 +425,11 @@ def test(models, testLoader, args):
     decoder.eval()
     count = 0
     key_loss = {}
+
+    # img_arr = []
+    # fine_arr = []
+    # gt_arr = []
+    # tax_arr = []
     with torch.no_grad():
         loader = tqdm(enumerate(testLoader), total=len(testLoader))
         for i, batch in loader:
@@ -453,12 +456,23 @@ def test(models, testLoader, args):
 
             # loss1 = chamfer(coarse, gt)
             loss2 = chamfer(fine, gt)
+            # emd_loss, _ = emd(fine, gt, 0.005, 300)
+            # emd_loss = np.sqrt(emd_loss.cpu()).mean()
+            # loss3 = chamferNew(fine, gt)
             chamfer_loss = loss2
             # mse_loss = MSE(base_rep, rep) * args.lambda_latent
             loss = chamfer_loss
-            test_loss += loss.item() * 1000
+            test_loss += chamfer_loss.item() * 1000
             for i in range(img1.shape[0]):
+                # img_arr.append(A[i].detach().cpu().transpose(
+                #     1, 0).transpose(1, 2).numpy())
+                # tax_arr.append(taxonomy_id[i])
+                # fine_arr.append(fine[i].detach().cpu().numpy())
+                # gt_arr.append(gt[i].detach().cpu().numpy())
                 curr_loss = chamfer(fine[i].unsqueeze(0), gt[i].unsqueeze(0))
+                # curr_loss, _ = emd(fine[i].unsqueeze(
+                #     0), gt[i].unsqueeze(0), 0.005, 300)
+                # curr_loss = np.sqrt(curr_loss.cpu()).mean()
                 if taxonomy_id[i] not in key_loss:
                     key_loss[taxonomy_id[i]] = [curr_loss.item() * 1000]
                 else:
@@ -479,6 +493,10 @@ def test(models, testLoader, args):
     print_log(log_fd, "Taxonomy Losses")
     for key, value in key_loss.items():
         print_log(log_fd, f"{key}\t{sum(value)/len(value)}")
+    # np.save(os.path.join(exp_path, 'img.npy'), np.array(img_arr))
+    # np.save(os.path.join(exp_path, 'tax.npy'), np.array(tax_arr))
+    # np.save(os.path.join(exp_path, 'fine.npy'), np.array(fine_arr))
+    # np.save(os.path.join(exp_path, 'gt.npy'), np.array(gt_arr))
     # save dictionary as pandas dataframe
     df = pd.DataFrame.from_dict({key: round(sum(value)/len(value), 4)
                                 for key, value in key_loss.items()}, orient='index')
@@ -497,6 +515,10 @@ def get_args():
                         help="JSON file containing the data")
     parser.add_argument("--b_tag", type=str, default="depth",
                         help="Tag for the B Image")
+    parser.add_argument("--num_dense", type=int,
+                        default=1024, help="Number of dense points")
+    parser.add_argument("--img_count", type=int,
+                        default=12, help="Image count")
     parser.add_argument("--log_dir", type=str, default="logs", help="Log dir")
     parser.add_argument("--exp", type=str, default="exp", help="Experiment")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")

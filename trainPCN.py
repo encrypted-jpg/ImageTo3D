@@ -22,7 +22,7 @@ from tensorboardX import SummaryWriter
 import visdom
 from datasets import PCNDataset
 from utils.utils import ReplayBuffer, LambdaLR, weights_init_normal, plot_pcd_one_view
-from extensions.chamfer_dist import ChamferDistanceL1
+from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2
 
 
 def make_dir(dir_path):
@@ -131,11 +131,11 @@ def dataLoaders(args):
         folder, json, mode='val', b_tag=args.b_tag, img_height=args.size, img_width=args.size)
 
     trainLoader = DataLoader(
-        trainDataset, batch_size=batch_size, shuffle=True, drop_last=True)
+        trainDataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=4, prefetch_factor=2, persistent_workers=True)
     testLoader = DataLoader(
-        testDataset, batch_size=batch_size, shuffle=False, drop_last=True)
+        testDataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=4, prefetch_factor=2, persistent_workers=True)
     valLoader = DataLoader(
-        valDataset, batch_size=batch_size, shuffle=False, drop_last=True)
+        valDataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=4, prefetch_factor=2, persistent_workers=True)
     return trainLoader, testLoader, valLoader
 
 
@@ -149,7 +149,7 @@ def reparameterization(mu, logvar, Tensor, args):
 
 def get_model(args):
     encoder = PCNEncoder(latent_dim=1024)
-    decoder = PCNDecoder(latent_dim=1024, num_dense=16384)
+    decoder = PCNDecoder(latent_dim=1024, num_dense=args.num_dense)
     print(f"Encoder Parameters: {round(count_parameters(encoder), 4) / 1e6}")
     print(f"Decoder Parameters: {round(count_parameters(decoder), 4) / 1e6}")
     return encoder, decoder
@@ -208,8 +208,8 @@ def train(models, trainLoader, valLoader, args):
         # lr_scheduler_E.load_state_dict(checkpoint['lr_scheduler_E'])
         args.epoch = checkpoint['epoch'] + 1
         train_step = checkpoint['epoch'] * len(trainLoader)
-        # minLoss = checkpoint['loss']
-        # minLossEpoch = args.epoch
+        minLoss = checkpoint['loss']
+        minLossEpoch = args.epoch
         lr_scheduler_E, lr_scheduler_D = get_scheduler(
             optimizer_E, optimizer_D, args)
         print_log(
@@ -226,7 +226,7 @@ def train(models, trainLoader, valLoader, args):
         elif epoch < 50:
             x = 0.5
         else:
-            x = 0.05
+            x = 0.0001
 
         encoder.train()
         decoder.train()
@@ -377,8 +377,9 @@ def test(models, testLoader, args):
             coarse, fine = decoder(rep)
             # loss1 = chamfer(coarse, gt)
             loss2 = chamfer(fine, gt)
+            # loss3 = chamferNew(fine, gt)
             loss = loss2
-            test_loss += loss.item() * 1000
+            test_loss += loss2.item() * 1000
 
             if args.testSave:
                 index = random.randint(0, inp.shape[0] - 1)
@@ -394,11 +395,13 @@ def test(models, testLoader, args):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--folder", type=str, default="ShapeNetRender", help="Folder containing the data")
+        "--folder", type=str, default="../ShapeNet", help="Folder containing the data")
     parser.add_argument("--json", type=str, default="final.json",
                         help="JSON file containing the data")
     parser.add_argument("--b_tag", type=str, default="depth",
                         help="Tag for the B Image")
+    parser.add_argument("--num_dense", type=int,
+                        default=1024, help="Number of dense points")
     parser.add_argument("--log_dir", type=str, default="logs", help="Log dir")
     parser.add_argument("--exp", type=str, default="exp", help="Experiment")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")

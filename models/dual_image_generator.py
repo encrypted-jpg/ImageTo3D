@@ -32,7 +32,7 @@ class DualImageGenerator(nn.Module):
         x = self.dropout2(x)
         x = self.fc3(x)
         mean = self.mean(x)
-        mean = F.leaky_relu(mean)
+        mean = F.relu(mean)
         logvar = self.logvar(x)
-        logvar = F.leaky_relu(logvar)
+        logvar = F.relu(logvar)
         return mean, logvar
